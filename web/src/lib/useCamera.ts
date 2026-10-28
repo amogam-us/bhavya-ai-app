@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { captureFrame, mediaErrorMessage } from './media';
+import { nativeApp, readGlassesCamera } from './native';
 
 export type CameraStatus = 'off' | 'starting' | 'on' | 'error';
+
+/** How often the glasses preview and status refresh inside the Android app. */
+const GLASSES_POLL_MS = 1000;
 
 function stopStream(stream: MediaStream | null): void {
   stream?.getTracks().forEach((track) => track.stop());
@@ -9,16 +13,52 @@ function stopStream(stream: MediaStream | null): void {
 
 /**
  * Runs the camera only while `active` is true. When `active` turns false
- * (for example the privacy gate closes) the tracks are stopped at once,
- * so the camera light goes off too.
+ * (for example the privacy gate closes) the camera stops at once.
+ *
+ * Inside the Bhavya Android app this uses the glasses camera through the native
+ * bridge; in a browser it uses the device camera.
  */
 export function useCamera(active: boolean) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [status, setStatus] = useState<CameraStatus>('off');
   const [error, setError] = useState<string | null>(null);
   const [aspect, setAspect] = useState(4 / 3);
+  const [preview, setPreview] = useState<string | null>(null);
 
+  // Glasses camera (Android app).
   useEffect(() => {
+    const bridge = nativeApp;
+    if (!active || !bridge) return;
+    setStatus('starting');
+    setError(null);
+    bridge.startCamera();
+
+    const refresh = () => {
+      const { status: glasses, message } = readGlassesCamera(bridge);
+      if (glasses === 'on') {
+        setStatus('on');
+        setError(null);
+        const frame = bridge.captureFrame();
+        if (frame) setPreview(frame);
+      } else if (glasses === 'off' || glasses === 'starting') {
+        setStatus('starting');
+      } else {
+        setStatus('error');
+        setError(message);
+      }
+    };
+    const timer = setInterval(refresh, GLASSES_POLL_MS);
+    return () => {
+      clearInterval(timer);
+      bridge.stopCamera();
+      setPreview(null);
+      setStatus('off');
+    };
+  }, [active]);
+
+  // Device camera (browser).
+  useEffect(() => {
+    if (nativeApp) return;
     if (!active) {
       setStatus('off');
       return;
@@ -67,7 +107,26 @@ export function useCamera(active: boolean) {
     };
   }, [active]);
 
-  const capture = useCallback(() => captureFrame(videoRef.current), []);
+  const capture = useCallback(
+    () => (nativeApp ? nativeApp.captureFrame() || null : captureFrame(videoRef.current)),
+    [],
+  );
 
-  return { videoRef, status, error, aspect, capture };
+  /** Keeps the overlay aligned with the glasses preview image. */
+  const onPreviewLoad = useCallback((image: HTMLImageElement) => {
+    if (image.naturalWidth && image.naturalHeight) {
+      setAspect(image.naturalWidth / image.naturalHeight);
+    }
+  }, []);
+
+  return {
+    source: nativeApp ? ('glasses' as const) : ('device' as const),
+    videoRef,
+    preview,
+    onPreviewLoad,
+    status,
+    error,
+    aspect,
+    capture,
+  };
 }

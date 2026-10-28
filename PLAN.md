@@ -8,7 +8,7 @@ AI-powered independence companion for autistic children, built for the **Meta Gl
 | Days left at plan time | 8 (Oct 28 → Nov 4) |
 | AI rule | Use only Meta models: Muse family via Meta Model API (no external LLMs) |
 | Source requirements | `Bhavya AI — AI-Powered Independence Companion` (Google Doc) |
-| Build status (Oct 28) | Hub, parent dashboard, web child app and home simulator built and tested against the live Muse API. Native Android DAT app not started (see README) |
+| Build status (Oct 28) | Hub, parent dashboard, web child app and home simulator built and tested against the live Muse API. Android glasses app (Kotlin, DAT 1.0.1) built; not yet tested on a phone (see android/README.md) |
 
 ---
 

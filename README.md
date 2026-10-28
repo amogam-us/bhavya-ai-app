@@ -93,8 +93,16 @@ web/      Vite + React app
   src/pages/parent     Parent dashboard
   src/pages/child      Child app
   src/pages/simulator  Home simulator
+android/  Kotlin app for Meta glasses: hosts the child app, adds the glasses camera and voice
 data/     Database and generated pictures (created at runtime, not committed)
 ```
+
+### Android app for the glasses
+
+The [Android app](android/README.md) shows the child app from the hub and connects Meta glasses
+through the Meta Wearables Device Access Toolkit. Inside it, the child app uses the glasses camera
+and Android's voice instead of the browser's (`web/src/lib/native.ts`). Without glasses, Meta's
+Mock Device Kit uses the phone camera as the glasses camera.
 
 ### Design rules
 
@@ -117,11 +125,11 @@ data/     Database and generated pictures (created at runtime, not committed)
 Built and tested: the hub, the parent dashboard, the child app (web) and the home simulator,
 against the live Meta Model API.
 
+Built, compiled and unit tested, not yet run on a phone: the Android glasses app.
+
 Not built yet:
 
-- **Native Android app with the Meta Wearables Device Access Toolkit.** The web child app stands
-  in for it today (the phone or laptop camera plays the glasses camera). The Android app would
-  speak the same WebSocket protocol (`shared/src/protocol.ts`) and REST endpoints.
+- Showing steps on the Meta Ray-Ban Display screen, and tapping the glasses touchpad for Done.
 - A living-room observer camera, and real smart-home devices (Home Assistant).
 
 See [PLAN.md](PLAN.md) for the full plan.

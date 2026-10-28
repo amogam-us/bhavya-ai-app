@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The home hub runs on the family's own Wi-Fi at a local address (http://192.168.x.x),
+  so plain HTTP must be allowed. Nothing leaves the home network except the hub's own
+  HTTPS calls to the Meta Model API.
+-->
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <base-config cleartextTrafficPermitted="true" tools:ignore="InsecureBaseConfiguration" />
+</network-security-config>

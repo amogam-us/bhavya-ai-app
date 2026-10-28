@@ -989,7 +989,8 @@ th {
   overflow: hidden;
   background: #0f1d1e;
 }
-.camera-panel video {
+.camera-panel video,
+.camera-panel img {
   width: 100%;
   height: 100%;
   display: block;

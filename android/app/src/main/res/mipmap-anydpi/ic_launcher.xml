@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Icon for Android 12. The <monochrome> layer only exists from Android 13; putting it here would
+  move the whole icon to API 33+ and leave Android 12 without one. See mipmap-anydpi-v33.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="MonochromeLauncherIcon">
+    <background android:drawable="@color/brand" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
