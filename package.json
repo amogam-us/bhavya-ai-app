@@ -1,0 +1,35 @@
+{
+  "name": "bhavya-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-powered independence companion for autistic children, built on Meta Muse models.",
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "hub",
+    "web"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n hub,web -c blue,green \"npm:dev -w hub\" \"npm:dev -w web\"",
+    "build": "npm run build -w web",
+    "start": "npm run start -w hub",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "check": "npm run typecheck && npm run lint && npm run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0"
+  }
+}
