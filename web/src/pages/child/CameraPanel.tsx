@@ -84,7 +84,17 @@ export function CameraPanel({ run, onHint }: CameraPanelProps) {
 
   return (
     <div className="camera-panel" style={{ aspectRatio: String(camera.aspect) }}>
-      <video ref={camera.videoRef} muted playsInline aria-label="Camera view" />
+      {camera.source === 'device' ? (
+        <video ref={camera.videoRef} muted playsInline aria-label="Camera view" />
+      ) : (
+        camera.preview && (
+          <img
+            src={camera.preview}
+            alt="Glasses camera view"
+            onLoad={(e) => camera.onPreviewLoad(e.currentTarget)}
+          />
+        )
+      )}
       {boxes.map((box, i) => (
         <div
           key={i}
@@ -99,7 +109,8 @@ export function CameraPanel({ run, onHint }: CameraPanelProps) {
       ))}
       <div className="camera-overlay">
         <span className="camera-status">
-          {status === 'starting' && 'Starting camera…'}
+          {status === 'starting' &&
+            (camera.source === 'glasses' ? 'Starting the glasses camera…' : 'Starting camera…')}
           {status === 'on' && (note ?? 'Camera is helping with this step')}
           {status === 'error' && camera.error}
         </span>

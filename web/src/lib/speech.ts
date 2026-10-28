@@ -1,7 +1,10 @@
+import { nativeApp } from './native';
+
 /**
- * Voice output for the child app: on-device text-to-speech (the browser's
- * built-in voice, not an AI model) and a soft chime made with Web Audio.
- * Browsers only allow sound after a user gesture, so call unlock() from a tap.
+ * Voice output for the child app: on-device text-to-speech (the browser's or,
+ * inside the Android app, Android's built-in voice; not an AI model) and a soft
+ * chime made with Web Audio. Browsers only allow sound after a user gesture, so
+ * call unlock() from a tap.
  */
 
 const LANGUAGE_TAGS: Record<string, string> = {
@@ -28,18 +31,23 @@ class Speaker {
   unlock(): void {
     this.audio ??= new AudioContext();
     void this.audio.resume();
-    if ('speechSynthesis' in window) {
+    if (!nativeApp && 'speechSynthesis' in window) {
       // An empty utterance unlocks speech on iOS Safari.
       window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
     }
   }
 
   get canSpeak(): boolean {
-    return 'speechSynthesis' in window;
+    return !!nativeApp || 'speechSynthesis' in window;
   }
 
   speak(text: string, options: VoiceOptions): void {
     if (!this.canSpeak || !text.trim()) return;
+    if (nativeApp) {
+      // Inside the Android app: Android's voice, heard through the glasses speakers.
+      nativeApp.speak(text, options.rate, options.volume, options.language ?? '');
+      return;
+    }
     const synth = window.speechSynthesis;
     synth.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -51,7 +59,8 @@ class Speaker {
   }
 
   stop(): void {
-    if (this.canSpeak) window.speechSynthesis.cancel();
+    if (nativeApp) nativeApp.stopSpeaking();
+    else if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }
 
   /** Two gentle rising notes. */
