@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { Icon, type IconName } from '../../components/Icon';
 import { Button, ConnectionBadge } from '../../components/ui';
-import { clockTime } from '../../lib/format';
 import { useHome } from '../../lib/useHome';
 
 const NAV: { to: string; icon: IconName; label: string; end?: boolean }[] = [
@@ -48,23 +47,6 @@ export function ParentLayout() {
           ))}
         </nav>
         <ConnectionBadge connected={home.connected} />
-        <section className="alerts-panel" aria-label="Recent updates">
-          <h3>
-            <Icon name="bell" size={16} /> Updates
-          </h3>
-          {home.notifications.length === 0 ? (
-            <p className="muted small">Nothing yet.</p>
-          ) : (
-            <ul className="alerts-list">
-              {home.notifications.map((n) => (
-                <li key={n.id} className={`alert-item alert-${n.kind}`}>
-                  {n.message}
-                  <time dateTime={n.at}>{clockTime(n.at)}</time>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
       </aside>
 
       <main className="parent-main">

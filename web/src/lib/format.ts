@@ -11,10 +11,6 @@ export function timeAgo(iso: string, now = Date.now()): string {
   return days === 1 ? 'yesterday' : `${days} days ago`;
 }
 
-export function clockTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
 export const LEVEL_LABELS: Record<PromptLevel, string> = {
   3: 'Full guidance',
   2: 'Short reminder',
