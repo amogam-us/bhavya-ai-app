@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Icon, type IconName } from '../components/Icon';
 
-// The home simulator is not linked here; it still works when opened directly at /simulator.
 const APPS: { to: string; icon: IconName; title: string; text: string }[] = [
   {
     to: '/parent',
@@ -14,6 +13,12 @@ const APPS: { to: string; icon: IconName; title: string; text: string }[] = [
     icon: 'heart',
     title: 'Child app',
     text: 'Step-by-step guidance with pictures and voice, a communication board, and calm breaks.',
+  },
+  {
+    to: '/simulator',
+    icon: 'home',
+    title: 'Home simulator',
+    text: 'Stands in for presence sensors and smart lights: move the child between rooms.',
   },
 ];
 

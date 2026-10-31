@@ -8,8 +8,9 @@ dist/
 .env.*
 !.env.example
 
-# Runtime data (database, generated cards)
+# Runtime data (database, generated cards) and archives that may contain it
 data/
+*.zip
 
 # Logs and OS files
 *.log

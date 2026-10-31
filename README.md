@@ -26,12 +26,11 @@ cp .env.example .env      # then put your key in MODEL_API_KEY
 npm run dev
 ```
 
-Open <http://localhost:5173>. The home page links to the parent dashboard and the child app:
+Open <http://localhost:5173>. The home page links to the three apps:
 
 - **Parent dashboard** (`/parent`): create, review and approve routines; progress; child settings and rooms.
 - **Child app** (`/child`): the step player, communication board and break screen.
-- **Home simulator** (`/simulator`): stands in for presence sensors and smart lights. It is not
-  linked from the home page; open the address directly.
+- **Home simulator** (`/simulator`): stands in for presence sensors and smart lights.
 
 Two demo routines are added on first start: *Using the restroom* (private room, starts
 automatically, camera off) and *Pack your school bag* (living room, camera checks).
