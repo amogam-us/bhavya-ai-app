@@ -28,7 +28,11 @@ async function main(): Promise<void> {
     new MuseClient({ apiKey: config.apiKey, baseUrl: config.museBaseUrl }),
     app.log,
   );
-  const engine = new MissionEngine({ repos, glassesSuggestions: config.glassesSuggestions });
+  const engine = new MissionEngine({
+    repos,
+    glassesSuggestions: config.glassesSuggestions,
+    privatePauseMs: config.privatePauseMinutes * 60_000,
+  });
   // What the hub noticed and decided, step by step. Shown with LOG_LEVEL=debug.
   engine.on('trace', (entry) => app.log.debug(`[${entry.kind}] ${entry.message}`));
   const missions = new MissionService({ repos, muse, cardsDir: config.cardsDir });

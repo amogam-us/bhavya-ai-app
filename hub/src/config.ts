@@ -29,6 +29,8 @@ const envSchema = z.object({
   // "off" turns off finding routines with the glasses camera for the whole hub
   // (the parent setting is hidden and the camera never looks around).
   GLASSES_SUGGESTIONS: word.pipe(z.enum(['on', 'off'])).default('on'),
+  // Minutes the glasses stop looking around after seeing a private place (1 to 60).
+  PRIVATE_PAUSE_MINUTES: z.coerce.number().int().min(1).max(60).default(10),
   // "on" shows in the child app what Muse saw in each camera frame (for testing only).
   CAMERA_DEBUG: word.pipe(z.enum(['on', 'off'])).default('off'),
 });
@@ -46,6 +48,7 @@ export interface AppConfig {
   prettyLogs: boolean;
   simulator: AppOptions['simulator'];
   glassesSuggestions: boolean;
+  privatePauseMinutes: number;
   cameraDebug: boolean;
 }
 
@@ -70,6 +73,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     prettyLogs: e.NODE_ENV !== 'production',
     simulator: { visible: e.SIMULATOR === 'show', view: e.SIMULATOR_VIEW },
     glassesSuggestions: e.GLASSES_SUGGESTIONS === 'on',
+    privatePauseMinutes: e.PRIVATE_PAUSE_MINUTES,
     cameraDebug: e.CAMERA_DEBUG === 'on',
   };
 }

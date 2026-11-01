@@ -27,6 +27,7 @@ export function SettingsPage() {
         <ProfileCard
           initial={settings.data.profile}
           suggestionsAvailable={options.data?.glassesSuggestions ?? false}
+          privatePauseMinutes={options.data?.privatePauseMinutes ?? 10}
         />
         <RoomsCard initial={settings.data.zones} />
         <BoardCard />
@@ -55,10 +56,13 @@ function toStatus(e: unknown): Status {
 function ProfileCard({
   initial,
   suggestionsAvailable,
+  privatePauseMinutes,
 }: {
   initial: ChildProfile;
   /** False when the hub's GLASSES_SUGGESTIONS option is off. */
   suggestionsAvailable: boolean;
+  /** The hub's PRIVATE_PAUSE_MINUTES option. */
+  privatePauseMinutes: number;
 }) {
   const [profile, setProfile] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -190,8 +194,9 @@ function ProfileCard({
           <p className="field-hint">
             When no routine is running, the glasses take a look every 15 seconds and Muse checks
             whether a routine fits the place. Your child is always asked first. Pictures are never
-            saved. It stays off in private rooms and pauses for 10 minutes after seeing a bathroom
-            or a place to change.
+            saved. It stays off in private rooms and pauses for {privatePauseMinutes}{' '}
+            {privatePauseMinutes === 1 ? 'minute' : 'minutes'} after seeing a bathroom or a place to
+            change.
           </p>
         </div>
       )}

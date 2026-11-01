@@ -12,7 +12,7 @@ const OUTCOMES: Record<ScanOutcome, string> = {
   waiting: 'needs one more matching look',
   suggested: 'asking the child',
   quiet: 'nothing to suggest',
-  private: 'private place: the camera pauses for 10 minutes',
+  private: 'private place: looking around pauses (PRIVATE_PAUSE_MINUTES)',
   ignored: 'look skipped (too soon, or not allowed now)',
 };
 
