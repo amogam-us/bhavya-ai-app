@@ -166,6 +166,22 @@ function ProfileCard({ initial }: { initial: ChildProfile }) {
           Offer calm music on breaks
         </label>
       </div>
+      <div className="stack" style={{ gap: 4 }}>
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={profile.glassesSuggestions}
+            onChange={(e) => set({ glassesSuggestions: e.target.checked })}
+          />
+          Suggest routines from the glasses camera
+        </label>
+        <p className="field-hint">
+          When no routine is running, the glasses take a look every 15 seconds and Muse checks
+          whether a routine fits the place. Your child is always asked first. Pictures are never
+          saved. It stays off in private rooms and pauses for 10 minutes after seeing a bathroom or
+          a place to change.
+        </p>
+      </div>
       <StatusNote status={status} />
       <div className="row">
         <Button variant="primary" busy={saving} onClick={() => void save()}>

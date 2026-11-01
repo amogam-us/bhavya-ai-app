@@ -17,6 +17,11 @@ export const clientMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('break'), ...runRef, onBreak: z.boolean() }),
   z.object({ type: z.literal('set_assistant'), enabled: z.boolean() }),
   z.object({ type: z.literal('board_say'), phraseId: z.enum(BOARD_PHRASE_IDS) }),
+  z.object({
+    type: z.literal('suggestion_answer'),
+    suggestionId: z.string().min(1),
+    accept: z.boolean(),
+  }),
   z.object({ type: z.literal('zone_enter'), zone: z.string().min(1) }),
   z.object({ type: z.literal('zone_leave') }),
   z.object({ type: z.literal('set_light'), device: z.string().min(1), on: z.boolean() }),

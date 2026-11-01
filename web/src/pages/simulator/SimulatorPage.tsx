@@ -137,6 +137,19 @@ export function SimulatorPage() {
                     : 'No routine running.'}
                 </p>
               )}
+              {state.paused && (
+                <span className="small">
+                  Waiting: {state.paused.missionTitle} (step {state.paused.stepIndex + 1} of{' '}
+                  {state.paused.totalSteps})
+                </span>
+              )}
+              {state.suggestion && (
+                <span className="row" style={{ gap: 6 }}>
+                  <Badge tone="info">Asking</Badge>
+                  <span className="small">{state.suggestion.prompt}</span>
+                </span>
+              )}
+              {state.scanning && <Badge tone="neutral">Glasses looking for routines</Badge>}
             </Card>
           </div>
         </div>

@@ -63,6 +63,31 @@ export interface TranscribeResponse {
   transcript: string;
 }
 
+/** The child spoke to Bhavya with the Talk button. Same audio format as transcribeSchema. */
+export const voiceRequestSchema = transcribeSchema;
+
+/** What Bhavya understood and did with a spoken request. */
+export type VoiceAction =
+  'start_routine' | 'suggest_routine' | 'continue' | 'help' | 'stop' | 'break' | 'done' | 'none';
+
+export interface VoiceRequestResponse {
+  /** What Muse heard, or "" when nothing was heard. */
+  transcript: string;
+  action: VoiceAction;
+  /** Short reply the child app speaks and shows. */
+  message: string;
+}
+
+/** One idle glasses frame, sent so Bhavya can suggest a routine. */
+export const sceneScanSchema = z.object({ image: imageDataUrlSchema });
+
+/** private: camera paused; quiet: nothing fits; waiting: needs a second matching look. */
+export type ScanOutcome = 'private' | 'quiet' | 'waiting' | 'suggested' | 'ignored';
+
+export interface SceneScanResponse {
+  outcome: ScanOutcome;
+}
+
 export const uploadCardSchema = z.object({ image: imageDataUrlSchema });
 
 export interface DraftResponse {

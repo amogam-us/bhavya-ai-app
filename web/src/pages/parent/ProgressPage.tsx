@@ -28,6 +28,8 @@ const END_REASONS: Record<string, string> = {
   stopped: 'Child stopped it',
   left_room: 'Left the room',
   assistant_off: 'Helper turned off',
+  not_resumed: 'Paused, not continued',
+  replaced: 'Set aside for another routine',
   hub_restarted: 'Hub restarted',
 };
 

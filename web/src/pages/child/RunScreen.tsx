@@ -1,20 +1,31 @@
-import type { CameraPolicy, ChildProfile, ClientMessage, RunView } from '@bhavya/shared';
+import type {
+  CameraPolicy,
+  ChildProfile,
+  ClientMessage,
+  PausedRunView,
+  RunView,
+} from '@bhavya/shared';
 import { useCallback, useEffect, useState } from 'react';
 import { Icon } from '../../components/Icon';
+import type { VoiceOptions } from '../../lib/speech';
 import { CameraPanel } from './CameraPanel';
+import { TalkButton } from './TalkButton';
 
 const STOP_CONFIRM_MS = 3000;
 
 interface RunScreenProps {
   run: RunView;
+  /** A routine set aside for this one, offered again when this one ends. */
+  paused: PausedRunView | null;
   camera: CameraPolicy;
   profile: ChildProfile;
+  voice: VoiceOptions;
   send: (message: ClientMessage) => boolean;
   onRepeat: (text: string) => void;
 }
 
 /** One step at a time: picture, words, a big Done button, and gentle ways out. */
-export function RunScreen({ run, camera, profile, send, onRepeat }: RunScreenProps) {
+export function RunScreen({ run, paused, camera, profile, voice, send, onRepeat }: RunScreenProps) {
   const { step, runId, stepIndex } = run;
   const [pendingStep, setPendingStep] = useState<number | null>(null);
   const [confirmStop, setConfirmStop] = useState(false);
@@ -100,6 +111,7 @@ export function RunScreen({ run, camera, profile, send, onRepeat }: RunScreenPro
           <Icon name="check" size={34} />
           Done
         </button>
+        <TalkButton voice={voice} />
         <button
           type="button"
           className="child-btn"
@@ -125,6 +137,11 @@ export function RunScreen({ run, camera, profile, send, onRepeat }: RunScreenPro
           Break
         </button>
       </div>
+      {paused && (
+        <p className="small muted" style={{ textAlign: 'center' }}>
+          {paused.missionTitle} is waiting for later.
+        </p>
+      )}
       <button type="button" className="btn btn-ghost btn-md" onClick={stop}>
         <Icon name="stop" size={18} />
         {confirmStop ? 'Tap again to stop this routine' : 'Stop this routine'}

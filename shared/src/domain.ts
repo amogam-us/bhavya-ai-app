@@ -102,6 +102,11 @@ export const childProfileSchema = z.object({
     breathing: z.boolean(),
     music: z.boolean(),
   }),
+  /**
+   * Let the glasses camera look around while no routine runs and suggest one.
+   * Off unless a parent turns it on. Defaults keep older saved profiles valid.
+   */
+  glassesSuggestions: z.boolean().default(false),
 });
 export type ChildProfile = z.infer<typeof childProfileSchema>;
 

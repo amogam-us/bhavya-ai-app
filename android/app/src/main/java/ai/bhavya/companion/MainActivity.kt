@@ -5,6 +5,7 @@ import ai.bhavya.companion.ui.ChildScreen
 import ai.bhavya.companion.ui.SetupScreen
 import ai.bhavya.companion.web.NativeBridge
 import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
@@ -149,7 +150,10 @@ class MainActivity : ComponentActivity() {
   private fun requestAndroidPermissions() {
     val permissions = buildList {
       add(Manifest.permission.BLUETOOTH)
-      add(Manifest.permission.BLUETOOTH_CONNECT)
+      // Before Android 12 this permission does not exist, and asking for it is always denied.
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        add(Manifest.permission.BLUETOOTH_CONNECT)
+      }
       if (app.settings.useMockGlasses) add(Manifest.permission.CAMERA)
     }
     androidPermissionLauncher.launch(permissions.toTypedArray())

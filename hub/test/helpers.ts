@@ -41,3 +41,9 @@ export function finishRun(h: Harness): void {
   }
   throw new Error('Run did not finish');
 }
+
+/** Turns on routine suggestions from the glasses, as a parent would in Settings. */
+export function enableGlassesSuggestions(h: Harness): void {
+  h.repos.settings.saveProfile({ ...h.repos.settings.getProfile(), glassesSuggestions: true });
+  h.engine.refresh();
+}

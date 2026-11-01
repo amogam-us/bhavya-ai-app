@@ -3,13 +3,19 @@ package ai.bhavya.companion.ui
 import ai.bhavya.companion.glasses.GlassesState
 import ai.bhavya.companion.isHubPage
 import ai.bhavya.companion.web.NativeBridge
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.webkit.PermissionRequest
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -105,6 +111,14 @@ private fun HubWebView(
     onPageLoading: () -> Unit,
     onLoadFailed: (String) -> Unit,
 ) {
+  // A microphone request from the page waits here while Android asks the user.
+  var pendingMicRequest by remember { mutableStateOf<PermissionRequest?>(null) }
+  val micPermission =
+      rememberLauncherForActivityResult(RequestPermission()) { granted ->
+        pendingMicRequest?.let { if (granted) it.grant(MIC_ONLY) else it.deny() }
+        pendingMicRequest = null
+      }
+
   AndroidView(
       modifier = Modifier.fillMaxSize(),
       factory = { context ->
@@ -134,6 +148,32 @@ private fun HubWebView(
                     error: WebResourceError,
                 ) {
                   if (request.isForMainFrame) onLoadFailed(error.description.toString())
+                }
+              }
+          webChromeClient =
+              object : WebChromeClient() {
+                // Only the hub may use the microphone (for the Talk button), and nothing else:
+                // camera frames come from the glasses through the bridge.
+                override fun onPermissionRequest(request: PermissionRequest) {
+                  val micOnly = request.resources.toList() == MIC_ONLY.toList()
+                  if (!micOnly || !isHubPage(request.origin.toString(), hubOrigin)) {
+                    request.deny()
+                    return
+                  }
+                  val allowed =
+                      context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+                          PackageManager.PERMISSION_GRANTED
+                  if (allowed) {
+                    request.grant(MIC_ONLY)
+                  } else {
+                    pendingMicRequest?.deny()
+                    pendingMicRequest = request
+                    micPermission.launch(Manifest.permission.RECORD_AUDIO)
+                  }
+                }
+
+                override fun onPermissionRequestCanceled(request: PermissionRequest) {
+                  if (pendingMicRequest == request) pendingMicRequest = null
                 }
               }
           loadUrl(url)
@@ -169,3 +209,5 @@ private fun LoadErrorPanel(
     OutlinedButton(onClick = onOpenSettings) { Text("Change hub address") }
   }
 }
+
+private val MIC_ONLY = arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)

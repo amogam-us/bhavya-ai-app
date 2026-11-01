@@ -95,7 +95,7 @@ export class SettingsRepo {
     this.write('board_icons', { ...this.getBoardIcons(), [phraseId]: url });
   }
 
-  private read<T>(key: string, schema: z.ZodType<T>, fallback: T): T {
+  private read<T>(key: string, schema: z.ZodType<T, z.ZodTypeDef, unknown>, fallback: T): T {
     const row = this.db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as
       { value: string } | undefined;
     if (!row) return fallback;
@@ -127,7 +127,7 @@ export interface StepRecord {
   level: PromptLevel;
   helpRequests: number;
   escalations: number;
-  confirmedBy: 'tap' | 'vision' | 'zone';
+  confirmedBy: 'tap' | 'vision' | 'zone' | 'voice';
   durationMs: number;
   completedAt: string;
 }

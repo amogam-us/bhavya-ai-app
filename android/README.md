@@ -4,20 +4,24 @@ A small native Kotlin app that connects Meta glasses to Bhavya. It shows the chi
 the home hub and adds what a browser cannot do:
 
 - **Glasses camera** through the Meta Wearables Device Access Toolkit (1.0.1). Frames are turned
-  into JPEGs on the phone and sent to the hub's existing step-check and object-finder endpoints.
+  into JPEGs on the phone and sent to the hub for step checks and, when a parent turns it on,
+  routine suggestions.
 - **Voice** through Android's built-in text-to-speech, heard in the glasses speakers when the
   glasses are connected as a Bluetooth audio device.
-- **Privacy gate on the device:** the glasses camera session runs only during a camera-OK step
-  while the app is on screen. Leaving the step, entering a private room, or leaving the app stops
-  the session and drops the last frame.
+- **Microphone** for the child's **Talk** button. Android asks for it the first time the child
+  taps Talk; only the hub page can use it, and the web view never gets the phone camera.
+- **Privacy gate on the device:** the glasses camera session runs only during a camera-OK step, or
+  while the hub allows routine suggestions, and only while the app is on screen. Leaving the step,
+  entering a private room, or leaving the app stops the session and drops the last frame.
 
 Without glasses, **simulated glasses** (Meta's Mock Device Kit) use the phone's back camera as the
 glasses camera, so the whole flow can be demoed on any Android phone.
 
 ## What you need
 
-- An Android phone with **Android 12 or newer**, a USB cable, and USB debugging turned on
+- An Android phone with **Android 10 or newer**, a USB cable, and USB debugging turned on
   (Settings, About phone, tap *Build number* 7 times, then Developer options, *USB debugging*).
+  Keep **Android System WebView** up to date, since the child app runs inside it.
 - The phone and the laptop on the **same Wi-Fi**.
 - For real glasses: the **Meta AI app** with the glasses paired and **Developer Mode** on
   (Meta AI app, Settings, App Info, tap *App Version* 5 times).

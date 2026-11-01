@@ -9,10 +9,10 @@ All AI runs on **Meta Muse models** through the Meta Model API. No other LLMs ar
 
 | Muse model | Used for |
 |---|---|
-| `muse-spark-1.3` | Drafting missions from text or a demo video, checking camera steps |
-| `sam-3.1` | Finding and highlighting the next object |
+| `muse-spark-1.3` | Drafting missions, checking camera steps, understanding the child's spoken requests, suggesting a routine from what the glasses see |
 | `muse-image-1.0` | Picture cards for each step and the communication board |
-| `muse-voice-transcribe-1.0` | Parents speaking instructions instead of typing |
+| `muse-voice-transcribe-1.0` | Parents speaking instructions, and the child's **Talk** button |
+| `sam-3.1` | The object finder (built, currently switched off, see below) |
 
 Spoken guidance uses the device's built-in text-to-speech (not an AI model).
 
@@ -41,9 +41,39 @@ automatically, camera off) and *Pack your school bag* (living room, camera check
 2. In the child app, tap **Start** (browsers only allow sound after a tap).
 3. In the simulator, click **Restroom**: the camera turns off, the light turns on and the routine
    starts on the child's screen. Tap **Done**, **Help** or **Break** to see each path.
-4. Click **Living room**, then start *Pack your school bag* in the child app. The camera opens,
-   SAM 3.1 highlights the object and Muse Spark confirms each step.
-5. Watch help requests and progress arrive in the parent dashboard.
+4. Click **Living room**, then start *Pack your school bag* in the child app. The camera opens
+   and Muse Spark confirms each step.
+5. During the bag routine, tap **Talk** and say "I need the toilet": the bag routine waits, the
+   restroom routine starts, and when it ends the child is asked "Do you want to continue Pack your
+   school bag?".
+6. Watch help requests and progress arrive in the parent dashboard.
+
+### Talking to Bhavya
+
+The child taps **Talk**, speaks, and taps again (it stops by itself after 10 seconds). Muse Voice
+writes down the words and Muse Spark works out what the child wants: start or continue a routine,
+help, a break, stop, or "I'm done". The engine then decides what to do. A clear request for another
+routine sets the current one aside (only one waits at a time) and offers it again afterwards; a
+request Muse is unsure about becomes a yes/no question; anything else changes nothing. Audio is
+never stored.
+
+### Routine suggestions from the glasses
+
+Off by default; a parent turns it on in **Child & rooms** ("Suggest routines from the glasses
+camera"). While no routine is running, the glasses take a look every 15 seconds and Muse Spark
+checks whether one of the approved routines in a camera-OK room fits the place. Bhavya only asks
+("Do you want to do Pack your school bag?") after the same answer twice in a row, and never starts
+anything without a yes. Limits: a routine the child says no to (or does not answer) is not
+suggested again for 15 minutes, at most 4 suggestions per hour, never in a known private room, and
+if Muse sees a bathroom or a place to change, the glasses stop looking for 10 minutes. Without
+presence sensors the hub cannot know the room in advance, so that first private frame does reach
+Muse (with `store: false`, never saved); door sensors in private rooms avoid even that.
+
+### Object finder (switched off)
+
+Highlighting a step's object with SAM 3.1 ("Where is the toothbrush?", "Photo from video") is
+still in the code but switched off in `shared/src/features.ts` (`FEATURES.objectFinder`). While it
+is off, the hub does not register its routes and the web and Android apps hide its controls.
 
 ### Using a phone
 
@@ -107,12 +137,14 @@ Mock Device Kit uses the phone camera as the glasses camera.
 ### Design rules
 
 - **The engine decides, Muse advises.** The mission engine is deterministic code. Muse drafts
-  missions and judges camera frames, but only the engine changes steps or switches devices.
+  missions, judges camera frames and interprets the child's words, but only the engine changes
+  steps, starts routines or switches devices.
 - **Smart-home actions are an allowlist** (`light_on`, `light_off`) scoped to the mission's room.
   There is no lock action, so door locks can never be automated. A light is never switched off
   while the child is in that room.
-- **Privacy gate.** The camera is allowed only while the child is in a known camera-OK room. In
-  private rooms the child app stops the camera and the hub rejects frames. Frames are never stored,
+- **Privacy gate.** Step checks use the camera only while the child is in a known camera-OK room,
+  and never during a routine for a private room. In private rooms the child app stops the camera
+  and the hub rejects frames. Frames are never stored,
   Muse requests are sent with `store: false`, and the `-contributor` models are never used.
 - **Muse is never asked about the child's body, face, emotions or movements**, only objects and
   task state. Repetitive movements are never flagged.

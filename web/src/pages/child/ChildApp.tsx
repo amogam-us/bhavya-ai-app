@@ -4,12 +4,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { Spinner } from '../../components/ui';
 import { api } from '../../lib/api';
-import { speaker } from '../../lib/speech';
+import { speaker, type VoiceOptions } from '../../lib/speech';
 import { useHome, type HomeConnection } from '../../lib/useHome';
 import { useLoader } from '../../lib/useLoader';
 import { Board } from './Board';
 import { BreakScreen } from './BreakScreen';
+import { IdleScanner } from './IdleScanner';
 import { RunScreen } from './RunScreen';
+import { SuggestionCard } from './SuggestionCard';
+import { TalkButton } from './TalkButton';
 
 /** How long the "you finished" message stays on the home screen. */
 const CELEBRATE_MS = 2 * 60_000;
@@ -21,7 +24,11 @@ export function ChildApp() {
   const profile = settings.data?.profile ?? DEFAULT_PROFILE;
   const [started, setStarted] = useState(false);
 
-  const voice = { rate: profile.speechRate, volume: profile.volume, language: profile.language };
+  const voice: VoiceOptions = {
+    rate: profile.speechRate,
+    volume: profile.volume,
+    language: profile.language,
+  };
   const say = (text: string) => speaker.speak(text, voice);
 
   usePromptCues(started, home.state, profile);
@@ -66,11 +73,15 @@ export function ChildApp() {
         />
       ) : (
         <main className="child-main">
-          {home.state.run ? (
+          {home.state.suggestion ? (
+            <SuggestionCard suggestion={home.state.suggestion} send={home.send} onSpeak={say} />
+          ) : home.state.run ? (
             <RunScreen
               run={home.state.run}
+              paused={home.state.paused}
               camera={home.state.camera}
               profile={profile}
+              voice={voice}
               send={home.send}
               onRepeat={say}
             />
@@ -78,6 +89,7 @@ export function ChildApp() {
             <HomeScreen
               home={home}
               profile={profile}
+              voice={voice}
               icons={board.data?.icons ?? {}}
               onSay={sayPhrase}
             />
@@ -116,11 +128,12 @@ function usePromptCues(started: boolean, state: HomeState | null, profile: Child
 interface HomeScreenProps {
   home: HomeConnection;
   profile: ChildProfile;
+  voice: VoiceOptions;
   icons: Record<string, string>;
   onSay: (id: BoardPhraseId, label: string) => void;
 }
 
-function HomeScreen({ home, profile, icons, onSay }: HomeScreenProps) {
+function HomeScreen({ home, profile, voice, icons, onSay }: HomeScreenProps) {
   const missions = useLoader(() => api.missions(), []);
   const state = home.state;
   const [now, setNow] = useState(() => Date.now());
@@ -161,6 +174,10 @@ function HomeScreen({ home, profile, icons, onSay }: HomeScreenProps) {
         Hi {profile.name}!
       </h1>
       {finished && <p className="celebrate">You finished {finished.missionTitle}!</p>}
+      {state.scanning && <IdleScanner />}
+      <div className="talk-row">
+        <TalkButton voice={voice} label="Tell me what you need" />
+      </div>
 
       <section className="stack" aria-label="Routines">
         <h2>What do you want to do?</h2>
