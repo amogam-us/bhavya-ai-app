@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DECLINE_COOLDOWN_MS,
   EngineError,
+  MissionEngine,
   MAX_CAMERA_SUGGESTIONS_PER_HOUR,
   PRIVATE_SCAN_PAUSE_MS,
   SUGGESTION_TIMEOUT_MS,
@@ -371,6 +372,14 @@ describe('MissionEngine', () => {
       confidence,
     });
     const privatePlace: SceneResult = { private: true, missionId: null, confidence: 0.9 };
+
+    it('stays off for the whole hub when the hub option turns it off', () => {
+      const engine = new MissionEngine({ repos: h.repos, glassesSuggestions: false });
+      enableGlassesSuggestions(h);
+      expect(engine.getState().scanning).toBe(false);
+      expect(engine.applyScan(sees(h.mission('Pack').id))).toBe('ignored');
+      engine.dispose();
+    });
 
     it('stays off until a parent turns it on', () => {
       expect(h.state().scanning).toBe(false);

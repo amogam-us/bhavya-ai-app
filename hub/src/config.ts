@@ -26,6 +26,9 @@ const envSchema = z.object({
   SIMULATOR: word.pipe(z.enum(['show', 'hide'])).default('show'),
   // Simulator views: "both" (3D, with a button for the simple view), "3d" or "simple".
   SIMULATOR_VIEW: word.pipe(z.enum(['both', '3d', 'simple'])).default('both'),
+  // "off" turns off finding routines with the glasses camera for the whole hub
+  // (the parent setting is hidden and the camera never looks around).
+  GLASSES_SUGGESTIONS: word.pipe(z.enum(['on', 'off'])).default('on'),
   // "on" shows in the child app what Muse saw in each camera frame (for testing only).
   CAMERA_DEBUG: word.pipe(z.enum(['on', 'off'])).default('off'),
 });
@@ -42,6 +45,7 @@ export interface AppConfig {
   logLevel: z.infer<typeof envSchema>['LOG_LEVEL'];
   prettyLogs: boolean;
   simulator: AppOptions['simulator'];
+  glassesSuggestions: boolean;
   cameraDebug: boolean;
 }
 
@@ -65,6 +69,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     logLevel: e.LOG_LEVEL,
     prettyLogs: e.NODE_ENV !== 'production',
     simulator: { visible: e.SIMULATOR === 'show', view: e.SIMULATOR_VIEW },
+    glassesSuggestions: e.GLASSES_SUGGESTIONS === 'on',
     cameraDebug: e.CAMERA_DEBUG === 'on',
   };
 }

@@ -113,6 +113,8 @@ export interface AppOptions {
     visible: boolean;
     view: SimulatorView;
   };
+  /** False when finding routines with the glasses camera is turned off for this hub. */
+  glassesSuggestions: boolean;
   /** Shows on the child's screen what Muse saw in each camera frame, for testing. */
   cameraDebug: boolean;
 }
