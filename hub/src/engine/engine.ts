@@ -121,6 +121,8 @@ export interface EngineOptions {
   repos: Repositories;
   now?: () => number;
   newId?: () => string;
+  /** False turns off finding routines with the glasses camera (hub option). Default true. */
+  glassesSuggestions?: boolean;
 }
 
 /**
@@ -134,6 +136,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   private readonly repos: Repositories;
   private readonly now: () => number;
   private readonly makeId: () => string;
+  private readonly suggestionsAvailable: boolean;
 
   private zoneId: string | null = null;
   private assistantEnabled = true;
@@ -160,6 +163,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     this.repos = options.repos;
     this.now = options.now ?? Date.now;
     this.makeId = options.newId ?? newId;
+    this.suggestionsAvailable = options.glassesSuggestions ?? true;
   }
 
   // ---------------------------------------------------------------- queries
@@ -198,7 +202,9 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
    * and the glasses have not just seen a private place.
    */
   scanAllowed(): boolean {
-    if (!this.assistantEnabled || this.run || this.suggestion) return false;
+    if (!this.suggestionsAvailable || !this.assistantEnabled || this.run || this.suggestion) {
+      return false;
+    }
     if (!this.profile().glassesSuggestions) return false;
     if (this.currentZone()?.type === 'private') return false;
     return this.now() >= this.privateUntil;

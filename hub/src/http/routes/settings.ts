@@ -31,6 +31,7 @@ export function settingsRoutes(app: FastifyInstance, ctx: AppContext): void {
   /** Options set in the hub's .env, such as how the home simulator is offered. */
   app.get('/api/options', async (): Promise<AppOptions> => ({
     simulator: ctx.config.simulator,
+    glassesSuggestions: ctx.config.glassesSuggestions,
     cameraDebug: ctx.config.cameraDebug,
   }));
 
