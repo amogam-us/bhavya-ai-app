@@ -84,8 +84,20 @@ export const sceneScanSchema = z.object({ image: imageDataUrlSchema });
 /** private: camera paused; quiet: nothing fits; waiting: needs a second matching look. */
 export type ScanOutcome = 'private' | 'quiet' | 'waiting' | 'suggested' | 'ignored';
 
+/** What Muse saw in a glasses frame, for the camera debug view. */
+export interface ScanDetail {
+  /** A few words about the place and the main objects. */
+  seen: string;
+  private: boolean;
+  /** Title of the routine that fits, or null. */
+  routine: string | null;
+  confidence: number;
+}
+
 export interface SceneScanResponse {
   outcome: ScanOutcome;
+  /** Present when Muse looked at the frame. */
+  detail?: ScanDetail;
 }
 
 /**
@@ -101,6 +113,8 @@ export interface AppOptions {
     visible: boolean;
     view: SimulatorView;
   };
+  /** Shows on the child's screen what Muse saw in each camera frame, for testing. */
+  cameraDebug: boolean;
 }
 
 export const uploadCardSchema = z.object({ image: imageDataUrlSchema });

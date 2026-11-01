@@ -35,8 +35,7 @@ export function ParentLayout() {
     <div className="parent-shell">
       <aside className="sidebar">
         <Link to="/" className="brand">
-          <img src="/favicon.svg" alt="" />
-          Bhavya AI
+          <img src="/logo-wordmark.png" alt="Bhavya" width={121} height={38} />
         </Link>
         <nav className="nav" aria-label="Parent dashboard">
           {NAV.map((item) => (

@@ -142,15 +142,17 @@ export type VoiceIntentAnswer = z.infer<typeof voiceIntentSchema>;
 export const sceneCheckJsonSchema: JsonSchema = {
   type: 'object',
   properties: {
+    seen: { type: 'string' },
     private: { type: 'boolean' },
     routineId: { type: 'string' },
     confidence: { type: 'number' },
   },
-  required: ['private', 'routineId', 'confidence'],
+  required: ['seen', 'private', 'routineId', 'confidence'],
   additionalProperties: false,
 };
 
 export const sceneCheckSchema = z.object({
+  seen: z.string(),
   private: z.boolean(),
   routineId: z.string(),
   confidence: z.number(),

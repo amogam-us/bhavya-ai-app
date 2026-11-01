@@ -32,10 +32,13 @@ export function HomePage() {
 
   return (
     <main className="landing">
-      <span className="brand">
-        <img src="/favicon.svg" alt="" />
-        Bhavya AI
-      </span>
+      <img
+        className="landing-logo"
+        src="/logo.png"
+        alt="Bhavya: Supplemental Brain for Autism Kids"
+        width={900}
+        height={322}
+      />
       <h1>An independence companion for autistic children</h1>
       <p className="lead muted">
         Bhavya remembers routines, guides each step through smart glasses, and keeps the camera off

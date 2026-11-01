@@ -38,6 +38,11 @@ export interface DraftMissionParams {
   frames?: string[];
 }
 
+/** What Muse saw in a glasses frame, plus a few words for the debug view. */
+export interface SceneReport extends SceneResult {
+  seen: string;
+}
+
 export interface VoiceContext {
   profile: ChildProfile;
   routines: Mission[];
@@ -152,7 +157,7 @@ export class MuseService {
   async checkScene(
     image: string,
     context: { routines: Mission[]; zones: Zone[] },
-  ): Promise<SceneResult> {
+  ): Promise<SceneReport> {
     const answer = await this.client.structured({
       instructions: sceneCheckInstructions(context),
       content: [{ type: 'input_image', image_url: image }],
@@ -163,6 +168,7 @@ export class MuseService {
       timeoutMs: 30_000,
     });
     return {
+      seen: answer.seen.trim().slice(0, 120),
       private: answer.private,
       missionId: !answer.private && answer.routineId ? answer.routineId : null,
       confidence: clamp01(answer.confidence),

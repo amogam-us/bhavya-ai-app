@@ -66,6 +66,7 @@ describe('MuseService', () => {
 
   it('never suggests a routine for a private place', async () => {
     const { muse, fetchImpl } = serviceAnswering({
+      seen: 'bathroom with a toilet',
       private: true,
       routineId: restroom.id,
       confidence: 0.9,
@@ -74,16 +75,26 @@ describe('MuseService', () => {
       routines,
       zones: DEFAULT_ZONES,
     });
-    expect(scene).toEqual({ private: true, missionId: null, confidence: 0.9 });
+    expect(scene).toEqual({
+      seen: 'bathroom with a toilet',
+      private: true,
+      missionId: null,
+      confidence: 0.9,
+    });
     expect(sentPrompt(fetchImpl)).toContain('Never describe');
   });
 
   it('treats an empty routine id as no match', async () => {
-    const { muse } = serviceAnswering({ private: false, routineId: '', confidence: -2 });
+    const { muse } = serviceAnswering({
+      seen: 'kitchen',
+      private: false,
+      routineId: '',
+      confidence: -2,
+    });
     const scene = await muse.checkScene('data:image/jpeg;base64,AAAA', {
       routines,
       zones: DEFAULT_ZONES,
     });
-    expect(scene).toEqual({ private: false, missionId: null, confidence: 0 });
+    expect(scene).toEqual({ seen: 'kitchen', private: false, missionId: null, confidence: 0 });
   });
 });

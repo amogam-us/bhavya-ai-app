@@ -129,6 +129,7 @@ export function sceneCheckInstructions(params: { routines: Mission[]; zones: Zon
     "You look at one camera frame from a child's smart glasses while no routine is running.",
     VISION_PRIVACY_RULES,
     '',
+    'seen: up to 10 words naming the place and the main objects, for example "living room, school bag on the sofa". Never mention people.',
     'private: true if the frame shows a toilet, bathroom, shower, bath or a place to change clothes' +
       (privateRooms.length > 0
         ? `, or one of these private rooms: ${privateRooms.join(', ')}`

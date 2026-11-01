@@ -20,12 +20,17 @@ interface RunScreenProps {
   camera: CameraPolicy;
   profile: ChildProfile;
   voice: VoiceOptions;
+  /** Shows what Muse answered for each camera frame (hub option CAMERA_DEBUG). */
+  cameraDebug: boolean;
+  /** False in the simulator's phone preview, which never uses a camera. */
+  cameraHere: boolean;
   send: (message: ClientMessage) => boolean;
   onRepeat: (text: string) => void;
 }
 
 /** One step at a time: picture, words, a big Done button, and gentle ways out. */
-export function RunScreen({ run, paused, camera, profile, voice, send, onRepeat }: RunScreenProps) {
+export function RunScreen(props: RunScreenProps) {
+  const { run, paused, camera, profile, voice, send, onRepeat, cameraDebug, cameraHere } = props;
   const { step, runId, stepIndex } = run;
   const [pendingStep, setPendingStep] = useState<number | null>(null);
   const [confirmStop, setConfirmStop] = useState(false);
@@ -99,7 +104,14 @@ export function RunScreen({ run, paused, camera, profile, voice, send, onRepeat 
         {run.helpRequested && <p className="celebrate">Help is on the way.</p>}
       </article>
 
-      {run.visionActive && <CameraPanel run={run} onHint={onHint} />}
+      {run.visionActive &&
+        (cameraHere ? (
+          <CameraPanel run={run} onHint={onHint} debug={cameraDebug} />
+        ) : (
+          <p className="camera-elsewhere">
+            📷 The camera checks this step on the child&apos;s phone
+          </p>
+        ))}
 
       <div className="child-actions">
         <button
