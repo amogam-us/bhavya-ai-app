@@ -66,6 +66,17 @@ export interface HomeState {
 
 export type NotificationKind = 'help' | 'stuck' | 'completed' | 'ended' | 'board';
 
+/** Who or what a line in the simulator's "brain" log comes from. */
+export type TraceKind = 'sensor' | 'privacy' | 'home' | 'engine' | 'muse' | 'child' | 'parent';
+
+/** One line of the simulator's "brain" log. Kept in memory only, never stored. */
+export interface TraceEntry {
+  id: string;
+  kind: TraceKind;
+  message: string;
+  at: string;
+}
+
 export interface Notification {
   id: string;
   kind: NotificationKind;

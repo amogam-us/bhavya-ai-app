@@ -1145,6 +1145,470 @@ th {
   font-weight: 700;
 }
 
+/* ------------------------------------------------------------ 3D home simulator */
+.sim3d {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sim3d-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.sim3d-top h1 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.sim3d-tools {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sim3d-tool {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 7px 13px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sim3d-tool:hover {
+  border-color: var(--primary);
+}
+.sim3d-tool:focus-visible,
+.sim3d-room:focus-visible,
+.sim3d-light:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+.sim3d-tool.is-on {
+  background: var(--primary-weak);
+  border-color: var(--primary);
+  color: var(--primary-strong);
+}
+.sim3d-tool:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.sim3d-count {
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.72rem;
+  text-align: center;
+}
+.sim3d-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 14px;
+}
+.sim3d-stage {
+  position: relative;
+  min-height: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #cfe3ea;
+  box-shadow: var(--shadow);
+}
+.sim3d-view,
+.sim3d-canvas {
+  position: absolute;
+  inset: 0;
+}
+.sim3d-canvas {
+  z-index: 0;
+}
+.sim3d-canvas canvas {
+  display: block;
+  touch-action: none;
+}
+.sim3d-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.sim3d-center {
+  height: 100%;
+  min-height: 50vh;
+  display: grid;
+  place-items: center;
+}
+.sim3d-simple {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 18px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sim3d-hud {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  pointer-events: none;
+}
+.sim3d-chip {
+  background: rgb(255 255 255 / 92%);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgb(16 24 40 / 10%);
+}
+.sim3d-chip.is-on {
+  background: #dbe8fb;
+  color: #244b8e;
+}
+.sim3d-chip.is-off {
+  background: #e4e1f7;
+  color: #3f3685;
+}
+.sim3d-chip.is-run {
+  background: #e3f4e6;
+  color: #1d5a2c;
+}
+.sim3d-rooms {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.sim3d-rooms-label {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 80%);
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.sim3d-room {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 13px;
+  background: rgb(255 255 255 / 94%);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgb(16 24 40 / 12%);
+}
+.sim3d-room:hover {
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--primary);
+}
+.sim3d-room.is-here {
+  background: var(--primary);
+  color: #fff;
+}
+.sim3d-help {
+  position: absolute;
+  z-index: 3;
+  left: 12px;
+  bottom: 64px;
+  width: min(350px, calc(100% - 24px));
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 10px 30px rgb(16 24 40 / 18%);
+  font-size: 0.88rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sim3d-help ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.sim3d-help .btn {
+  align-self: flex-start;
+}
+kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: #fff;
+  font:
+    700 0.76rem ui-monospace,
+    monospace;
+  text-align: center;
+}
+.sim3d-room-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 90%);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgb(16 24 40 / 12%);
+}
+.sim3d-room-label span {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.sim3d-room-label .is-private {
+  color: #5b4bc4;
+}
+.sim3d-room-label .is-unset {
+  color: var(--muted);
+}
+.sim3d-bubble {
+  position: relative;
+  max-width: 260px;
+  padding: 6px 11px;
+  border-radius: 12px;
+  background: #fff;
+  color: #173436;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 6px 16px rgb(16 24 40 / 20%);
+  transform: translateY(-16px);
+}
+.sim3d-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-bottom: 0;
+  border-top-color: #fff;
+}
+.sim3d-log {
+  position: absolute;
+  z-index: 4;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  height: min(46%, 380px);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 -6px 30px rgb(16 24 40 / 20%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sim3d-log-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px 6px;
+}
+.sim3d-log-head .sim3d-close {
+  margin-left: auto;
+}
+.sim3d-log ol {
+  flex: 1;
+  margin: 0;
+  padding: 0 8px 10px;
+  list-style: none;
+  overflow: auto;
+}
+.sim3d-log li {
+  display: grid;
+  grid-template-columns: 66px 70px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+}
+.sim3d-log li:first-child {
+  background: #f1f7f7;
+}
+.sim3d-log time {
+  color: #8a96a3;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+.sim3d-log .who {
+  color: var(--c);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.sim3d-log-empty {
+  padding: 4px 16px 16px;
+}
+.sim3d-close {
+  border: 0;
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.sim3d-close:hover {
+  background: var(--bg);
+}
+.sim3d-panel {
+  position: absolute;
+  z-index: 5;
+  top: 56px;
+  right: 12px;
+  width: 260px;
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(16 24 40 / 18%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sim3d-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sim3d-light {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sim3d-light:hover {
+  border-color: var(--primary);
+}
+.sim3d-bulb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #d9dee3;
+}
+.sim3d-light.is-on .sim3d-bulb {
+  background: #ffd34d;
+  box-shadow: 0 0 12px rgb(255 200 50 / 80%);
+}
+.sim3d-error {
+  position: absolute;
+  z-index: 6;
+  top: 56px;
+  left: 12px;
+  right: 12px;
+}
+.sim3d-side {
+  width: clamp(240px, 24vw, 380px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.sim3d-side-title {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sim3d-side-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: center;
+}
+.sim3d-phone-box {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+.sim3d-phone {
+  position: relative;
+  flex: none;
+}
+.sim3d-phone-body {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  border-radius: 52px;
+  background: #11181f;
+  box-shadow: 0 22px 50px rgb(16 24 40 / 28%);
+}
+.sim3d-phone-body iframe {
+  display: block;
+  border: 0;
+  border-radius: 40px;
+  background: #eef5f4;
+}
+@media (max-width: 1000px) {
+  .sim3d {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .sim3d-body {
+    grid-template-columns: 1fr;
+  }
+  .sim3d-stage {
+    height: 62vh;
+    min-height: 420px;
+  }
+  .sim3d-side {
+    width: 100%;
+    height: 760px;
+  }
+}
+
 /* ------------------------------------------------------------ responsive */
 @media (max-width: 860px) {
   .parent-shell {

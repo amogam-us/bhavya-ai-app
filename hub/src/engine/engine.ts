@@ -16,6 +16,8 @@ import {
   type Step,
   type SuggestionReason,
   type SuggestionView,
+  type TraceEntry,
+  type TraceKind,
   type VoiceAction,
   type Zone,
 } from '@bhavya/shared';
@@ -42,6 +44,10 @@ export const DECLINE_COOLDOWN_MS = 15 * 60_000;
 /** Camera and voice suggestions disappear if not answered in this time. */
 export const SUGGESTION_TIMEOUT_MS = 60_000;
 export const MAX_CAMERA_SUGGESTIONS_PER_HOUR = 4;
+/** Brain-log lines kept for a simulator that connects later. */
+const MAX_TRACES = 150;
+/** The same brain-log line is not repeated within this time. */
+const TRACE_REPEAT_MS = 60_000;
 
 const NOT_UNDERSTOOD = "Sorry, I didn't understand. Try again, or use the pictures.";
 const HELPER_RESTING = 'The helper is resting. Turn it on to start a routine.';
@@ -102,6 +108,7 @@ interface Suggestion extends SuggestionView {
 export interface EngineEvents {
   state: [HomeState];
   notification: [Notification];
+  trace: [TraceEntry];
 }
 
 export interface EngineOptions {
@@ -140,6 +147,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   private lastSceneMissionId: string | null = null;
   private cameraSuggestionTimes: number[] = [];
   private readonly declinedUntil = new Map<string, number>();
+  private readonly traces: TraceEntry[] = [];
 
   constructor(options: EngineOptions) {
     super();
@@ -213,6 +221,28 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     this.emitState();
   }
 
+  /** Recent brain-log lines, newest first. */
+  recentTraces(): TraceEntry[] {
+    return [...this.traces].reverse();
+  }
+
+  /**
+   * Adds a line to the simulator's brain log: what a sensor reported, what Muse
+   * answered, or what the engine decided. It never changes behaviour.
+   */
+  trace(kind: TraceKind, message: string): void {
+    const last = this.traces.at(-1);
+    const repeated =
+      last?.kind === kind &&
+      last.message === message &&
+      this.now() - Date.parse(last.at) < TRACE_REPEAT_MS;
+    if (repeated) return;
+    const entry: TraceEntry = { id: this.makeId(), kind, message, at: this.iso() };
+    this.traces.push(entry);
+    if (this.traces.length > MAX_TRACES) this.traces.shift();
+    this.emit('trace', entry);
+  }
+
   // ------------------------------------------------------- room and devices
 
   enterZone(zoneId: string): void {
@@ -223,6 +253,13 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
 
     this.zoneId = zoneId;
     if (zone.light) this.cancelLightTimer(zone.light);
+    this.trace('sensor', `Child is in the ${zone.name}`);
+    this.trace(
+      'privacy',
+      zone.type === 'private'
+        ? `${zone.name} is private → camera off`
+        : `${zone.name} allows the camera`,
+    );
     // Publish the new camera policy before anything else happens in the room.
     this.emitState();
 
@@ -231,6 +268,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
         .list()
         .find((m) => m.status === 'approved' && m.trigger === 'zone_enter' && m.zone === zoneId);
       if (mission) {
+        this.trace('engine', `Room rule: the ${zone.name} starts "${mission.title}"`);
         this.startRun(mission);
         this.emitState();
       }
@@ -247,6 +285,9 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     const zone = this.zones().find((z) => z.light === device);
     if (!zone) throw new EngineError(`Unknown light "${device}".`);
     this.cancelLightTimer(device);
+    if ((this.lights.get(device) ?? false) !== on) {
+      this.trace('home', `${zone.name} light ${on ? 'on' : 'off'} (switched by hand)`);
+    }
     this.lights.set(device, on);
     this.emitState();
   }
@@ -254,6 +295,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   setAssistant(enabled: boolean): void {
     if (this.assistantEnabled === enabled) return;
     this.assistantEnabled = enabled;
+    this.trace('child', enabled ? 'Turned the helper on' : 'Turned the helper off');
     if (!enabled) {
       this.clearSuggestion();
       if (this.run) this.endRun(this.run, 'ended', 'assistant_off');
@@ -304,7 +346,9 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     run.helpRequests += 1;
     run.helpRequested = true;
     this.repos.runs.addAssistance(run.id, 1, 0);
+    this.trace('child', `Asked for help with "${step.action}"`);
     this.escalateRun(run);
+    this.trace('engine', `More support: simpler hint (level ${run.level})`);
     this.notify('help', `${name} asked for help with "${step.action}" in "${run.mission.title}".`);
     this.armTimer(run);
     this.emitState();
@@ -314,6 +358,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     const run = this.matchRun(runId);
     if (!run || run.onBreak === onBreak) return;
     run.onBreak = onBreak;
+    this.trace('child', onBreak ? 'Took a break (step timer paused)' : 'Back from the break');
     if (onBreak) {
       this.clearTimer(run);
     } else {
@@ -327,6 +372,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   stop(runId: string): void {
     const run = this.matchRun(runId);
     if (!run) return;
+    this.trace('child', `Stopped "${run.mission.title}"`);
     this.endRun(run, 'ended', 'stopped');
     this.emitState();
   }
@@ -344,6 +390,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     const suggestion = this.suggestion;
     if (!suggestion || suggestion.id !== suggestionId) return;
     this.clearSuggestion();
+    this.trace('child', `Answered "${accept ? 'Yes' : 'Not now'}" to "${suggestion.prompt}"`);
     if (suggestion.reason === 'resume') {
       if (accept) this.resumePaused();
       else this.endPaused('not_resumed');
@@ -352,6 +399,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
       if (mission && this.assistantEnabled) this.switchTo(mission);
     } else {
       this.declinedUntil.set(suggestion.missionId, this.now() + DECLINE_COOLDOWN_MS);
+      this.trace('engine', `Won't suggest "${suggestion.missionTitle}" again for 15 minutes`);
       this.offerResume();
     }
     this.emitState();
@@ -415,6 +463,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     if (result.private) {
       this.lastSceneMissionId = null;
       this.pauseScanning();
+      this.trace('privacy', 'Private place seen → glasses stop looking for 10 minutes');
       this.emitState();
       return 'private';
     }
@@ -427,11 +476,15 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     }
     if (this.lastSceneMissionId !== mission.id) {
       this.lastSceneMissionId = mission.id;
+      this.trace('engine', 'Needs the same answer from the next look before asking');
       return 'waiting';
     }
     const hourAgo = this.now() - 3_600_000;
     this.cameraSuggestionTimes = this.cameraSuggestionTimes.filter((t) => t > hourAgo);
-    if (this.cameraSuggestionTimes.length >= MAX_CAMERA_SUGGESTIONS_PER_HOUR) return 'quiet';
+    if (this.cameraSuggestionTimes.length >= MAX_CAMERA_SUGGESTIONS_PER_HOUR) {
+      this.trace('engine', 'Hourly suggestion limit reached → stay quiet');
+      return 'quiet';
+    }
     this.cameraSuggestionTimes.push(this.now());
     this.lastSceneMissionId = null;
     this.suggest(mission, 'camera');
@@ -482,6 +535,10 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   }
 
   private pauseRun(run: ActiveRun): void {
+    this.trace(
+      'engine',
+      `Pausing "${run.mission.title}" at step ${run.stepIndex + 1}/${run.mission.steps.length}: it waits for later`,
+    );
     this.clearTimer(run);
     // Only one routine waits at a time.
     this.endPaused('replaced');
@@ -500,6 +557,10 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   /** Makes a paused routine the active one again, replaying its current step. */
   private continueRun(run: ActiveRun): void {
     this.clearSuggestion();
+    this.trace(
+      'engine',
+      `Continuing "${run.mission.title}" at step ${run.stepIndex + 1}/${run.mission.steps.length}`,
+    );
     this.run = run;
     run.stepStartedAt = this.now();
     this.setCue(run, cueForLevel(run.level, currentStep(run)));
@@ -537,12 +598,14 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
       );
     }
     this.suggestion = suggestion;
+    this.trace('engine', `Ask the child first: "${prompt}"`);
   }
 
   private expireSuggestion(suggestionId: string): void {
     const suggestion = this.suggestion;
     if (!suggestion || suggestion.id !== suggestionId) return;
     this.suggestion = null;
+    this.trace('engine', 'No answer in 60 seconds → counts as "not now"');
     // No answer counts as "not now".
     this.declinedUntil.set(suggestion.missionId, this.now() + DECLINE_COOLDOWN_MS);
     this.offerResume();
@@ -564,6 +627,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     if (this.privateTimer) clearTimeout(this.privateTimer);
     this.privateTimer = setTimeout(() => {
       this.privateTimer = null;
+      this.trace('privacy', 'Glasses may look around again');
       this.emitState();
     }, PRIVATE_SCAN_PAUSE_MS);
   }
@@ -599,6 +663,10 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
       startedAt: this.iso(),
     });
     this.run = run;
+    this.trace('engine', `Routine started: "${mission.title}"`);
+    if (this.findZone(mission.zone)?.type === 'private') {
+      this.trace('privacy', 'Routine for a private room → the camera stays off');
+    }
     this.runActions(mission, mission.onStart);
     this.beginStep(run);
   }
@@ -613,12 +681,23 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     run.helpRequested = false;
     run.stuckNotified = false;
     run.hint = null;
+    this.trace(
+      'engine',
+      `Step ${run.stepIndex + 1}/${run.mission.steps.length}: ${step.action} (support level ${run.level})`,
+    );
     this.setCue(run, cueForLevel(run.level, step));
     this.armTimer(run);
   }
 
   private completeStep(run: ActiveRun, confirmedBy: StepConfirmation): void {
     const step = currentStep(run);
+    const how: Record<StepConfirmation, [TraceKind, string]> = {
+      tap: ['child', `Tapped Done: "${step.action}"`],
+      vision: ['engine', `Camera check passed → "${step.action}" done`],
+      voice: ['child', `Said it is done: "${step.action}"`],
+      zone: ['engine', `Left the room during the last step → "${step.action}" done`],
+    };
+    this.trace(...how[confirmedBy]);
     this.repos.runs.recordStep({
       runId: run.id,
       stepIndex: run.stepIndex,
@@ -653,6 +732,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
 
     if (status === 'completed') {
       const title = run.mission.title;
+      this.trace('engine', `Routine finished ✓ "${title}"`);
       this.lastCompleted = { missionTitle: title, at: this.iso() };
       this.notify('completed', `${this.profile().name} finished "${title}".`);
     } else {
@@ -679,6 +759,8 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   private exitCurrentZone(): void {
     const leftZoneId = this.zoneId;
     this.zoneId = null;
+    const left = leftZoneId ? this.findZone(leftZoneId) : undefined;
+    if (left) this.trace('sensor', `Child left the ${left.name}`);
 
     const run = this.run;
     if (run && run.mission.zone === leftZoneId) {
@@ -709,6 +791,10 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     run.escalations += 1;
     this.repos.runs.addAssistance(run.id, 0, 1);
     this.escalateRun(run);
+    this.trace(
+      'engine',
+      `No progress on "${currentStep(run).action}" → simpler hint (level ${run.level})`,
+    );
     if (run.escalations >= ESCALATIONS_BEFORE_PARENT && !run.stuckNotified) {
       run.stuckNotified = true;
       const step = currentStep(run);
@@ -750,6 +836,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
       if (!on && this.zoneId === zone.id) {
         // Never darken the room the child is in: wait until they leave.
         this.lightOffWhenLeft.set(zone.id, action.delaySec);
+        this.trace('home', `${zone.name} light stays on until the child leaves`);
         continue;
       }
       this.scheduleLight(zone, on, action.delaySec);
@@ -777,6 +864,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     if (!on && this.zoneId === zone.id) return false;
     if ((this.lights.get(zone.light) ?? false) === on) return false;
     this.lights.set(zone.light, on);
+    this.trace('home', `${zone.name} light ${on ? 'on' : 'off'}`);
     return true;
   }
 
@@ -831,6 +919,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   private notify(kind: NotificationKind, message: string): void {
     const notification: Notification = { id: this.makeId(), kind, message, at: this.iso() };
     this.repos.notifications.add(notification);
+    this.trace('parent', `Notification: ${message}`);
     this.emit('notification', notification);
   }
 

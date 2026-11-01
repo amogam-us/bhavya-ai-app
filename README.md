@@ -30,23 +30,44 @@ Open <http://localhost:5173>. The home page links to the three apps:
 
 - **Parent dashboard** (`/parent`): create, review and approve routines; progress; child settings and rooms.
 - **Child app** (`/child`): the step player, communication board and break screen.
-- **Home simulator** (`/simulator`): stands in for presence sensors and smart lights.
+- **Home simulator** (`/simulator`): a 3D home that stands in for presence sensors and smart
+  lights, with the real child app in a phone frame next to it.
 
 Two demo routines are added on first start: *Using the restroom* (private room, starts
 automatically, camera off) and *Pack your school bag* (living room, camera checks).
 
 ### Demo walkthrough
 
-1. Open the simulator and the child app side by side.
-2. In the child app, tap **Start** (browsers only allow sound after a tap).
-3. In the simulator, click **Restroom**: the camera turns off, the light turns on and the routine
-   starts on the child's screen. Tap **Done**, **Help** or **Break** to see each path.
-4. Click **Living room**, then start *Pack your school bag* in the child app. The camera opens
+1. Open the simulator. The child app runs in the phone on the right; tap **Start** in it
+   (browsers only allow sound after a tap).
+2. Walk the child into the **Restroom** (arrow keys, or the "Walk to" buttons): the door sensor
+   fires, the camera turns off, the light turns on and the routine starts in the phone. Tap
+   **Done**, **Help** or **Break** to see each path.
+3. Walk to the **Living room**, then start *Pack your school bag* in the phone. The camera opens
    and Muse Spark confirms each step.
 5. During the bag routine, tap **Talk** and say "I need the toilet": the bag routine waits, the
    restroom routine starts, and when it ends the child is asked "Do you want to continue Pack your
    school bag?".
 6. Watch help requests and progress arrive in the parent dashboard.
+
+### Home simulator
+
+The 3D home (three.js, loaded only on this page) plays the part of the home's door sensors and
+smart lights:
+
+- Walk the child with <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> or <kbd>W</kbd>
+  <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> (hold <kbd>Shift</kbd> to run), or click a room. Walls
+  and furniture block the way. Walking into a room sends the same event a door sensor would;
+  walking out of the front door means the hub no longer knows where the child is.
+- Click a lamp, or open **Lights**, to switch a smart light.
+- The glasses show a green light and a faint view cone only while the camera is allowed.
+- **Bhavya's brain** opens a log of what the hub noticed and decided, including what Muse
+  answered (kept in memory only, sent only to the simulator).
+- **Simple view** shows the original button-based simulator; it is also used when the browser
+  cannot draw 3D. **Fast** turns off ambient occlusion for slower laptops.
+
+Rooms are matched to hub rooms by id (`restroom`, `bedroom`, `living_room`, `kitchen`), so names,
+privacy and lights follow the parent's settings.
 
 ### Talking to Bhavya
 
