@@ -463,4 +463,35 @@ describe('MissionEngine', () => {
       expect(h.state().scanning).toBe(false);
     });
   });
+
+  describe('brain log', () => {
+    it('explains what happened, newest first, without repeating itself', () => {
+      const lines: string[] = [];
+      h.engine.on('trace', (entry) => lines.push(`${entry.kind}: ${entry.message}`));
+      h.engine.enterZone('restroom');
+      expect(lines).toEqual(
+        expect.arrayContaining([
+          'sensor: Child is in the Restroom',
+          'privacy: Restroom is private → camera off',
+          'engine: Routine started: "Using the restroom"',
+          'home: Restroom light on',
+        ]),
+      );
+      expect(h.engine.recentTraces()[0]?.message).toBe(
+        lines.at(-1)?.split(': ').slice(1).join(': '),
+      );
+
+      const count = lines.length;
+      h.engine.trace('engine', 'Same line');
+      h.engine.trace('engine', 'Same line');
+      expect(lines.length).toBe(count + 1);
+    });
+
+    it('copies parent notifications into the log', () => {
+      const lines: string[] = [];
+      h.engine.on('trace', (entry) => lines.push(`${entry.kind}: ${entry.message}`));
+      h.engine.requestHelp(null);
+      expect(lines).toContain('parent: Notification: Bhavya asked for help.');
+    });
+  });
 });

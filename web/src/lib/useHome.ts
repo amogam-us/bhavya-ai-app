@@ -4,12 +4,14 @@ import type {
   HomeState,
   Notification,
   ServerMessage,
+  TraceEntry,
 } from '@bhavya/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const MAX_RETRY_DELAY_MS = 5000;
 const ERROR_VISIBLE_MS = 5000;
 const MAX_NOTIFICATIONS = 50;
+const MAX_TRACES = 150;
 
 function socketUrl(): string {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -20,6 +22,8 @@ export interface HomeConnection {
   state: HomeState | null;
   connected: boolean;
   notifications: Notification[];
+  /** Simulator only: the brain log, newest first. */
+  traces: TraceEntry[];
   /** Last error sent by the hub for this device, cleared after a few seconds. */
   error: string | null;
   send: (message: ClientMessage) => boolean;
@@ -36,6 +40,7 @@ export function useHome(
   const [state, setState] = useState<HomeState | null>(null);
   const [connected, setConnected] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [traces, setTraces] = useState<TraceEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const onNotificationRef = useRef(onNotification);
@@ -73,6 +78,12 @@ export function useHome(
           case 'notification':
             setNotifications((list) => [message.notification, ...list].slice(0, MAX_NOTIFICATIONS));
             onNotificationRef.current?.(message.notification);
+            break;
+          case 'traces':
+            setTraces(message.items);
+            break;
+          case 'trace':
+            setTraces((list) => [message.entry, ...list].slice(0, MAX_TRACES));
             break;
           case 'error':
             setError(message.message);
@@ -117,5 +128,5 @@ export function useHome(
     return true;
   }, []);
 
-  return { state, connected, notifications, error, send };
+  return { state, connected, notifications, traces, error, send };
 }

@@ -1,159 +1,192 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Icon } from '../../components/Icon';
-import {
-  Badge,
-  Button,
-  Card,
-  ConnectionBadge,
-  ErrorNotice,
-  PageHeader,
-  Spinner,
-} from '../../components/ui';
+import { ConnectionBadge, ErrorNotice, Notice, Spinner } from '../../components/ui';
 import { api } from '../../lib/api';
-import { LEVEL_LABELS } from '../../lib/format';
 import { useHome } from '../../lib/useHome';
 import { useLoader } from '../../lib/useLoader';
+import { useStoredState } from '../../lib/useStoredState';
+import { BrainLog } from './BrainLog';
+import { Home3DView } from './Home3DView';
+import { canRender3D, type Quality } from './home3d/world';
+import { PhoneFrame } from './PhoneFrame';
+import { SimpleSimulator } from './SimpleSimulator';
 
 /**
- * Stands in for the home's presence sensors and smart lights during the demo.
- * In a real home these events come from door or motion sensors, never from a camera.
+ * Home simulator: a 3D home that plays the part of presence sensors and smart
+ * lights, next to the real child app. Walking the child between rooms sends
+ * the same events door sensors would.
  */
 export function SimulatorPage() {
   const home = useHome('simulator');
   const settings = useLoader(() => api.settings(), []);
   const zones = settings.data?.zones ?? [];
   const state = home.state;
-  const currentZone = zones.find((z) => z.id === state?.zone);
+
+  const [view, setView] = useStoredState<'3d' | 'simple'>('bhavya.simulator.view', '3d');
+  const [quality, setQuality] = useStoredState<Quality>('bhavya.simulator.quality', 'high');
+  const [follow, setFollow] = useStoredState<boolean>('bhavya.simulator.follow', false);
+  const [showHelp, setShowHelp] = useStoredState<boolean>('bhavya.simulator.help', true);
+  const [unavailable, setUnavailable] = useState<string | null>(() =>
+    canRender3D() ? null : 'This browser cannot show 3D, so the simple view is shown.',
+  );
+  const [logOpen, setLogOpen] = useState(false);
+  const [lightsOpen, setLightsOpen] = useState(false);
+  const unread = useUnread(home.traces, logOpen);
+  const use3d = view === '3d' && !unavailable;
+  const lights = zones.filter((z) => z.light);
 
   return (
-    <main className="simulator">
-      <Link to="/" className="brand">
-        <img src="/favicon.svg" alt="" />
-        Bhavya AI
-      </Link>
-      <div style={{ marginTop: 20 }}>
-        <PageHeader
-          title="Home simulator"
-          subtitle="Plays the part of presence sensors and smart lights. Move the child between rooms to trigger routines."
-          actions={<ConnectionBadge connected={home.connected} />}
-        />
-      </div>
-      <ErrorNotice error={home.error ?? settings.error} />
-      {!state || !settings.data ? (
-        <Spinner label="Connecting to the home hub…" />
-      ) : (
-        <div className="stack">
-          <div className={`camera-state ${state.camera === 'on' ? 'is-on' : 'is-off'}`}>
-            <Icon name={state.camera === 'on' ? 'camera' : 'cameraOff'} size={28} />
-            <div>
-              {state.camera === 'on' ? 'Camera allowed' : 'Camera off'}
-              <div className="small" style={{ fontWeight: 500 }}>
-                {currentZone
-                  ? `Child is in the ${currentZone.name.toLowerCase()}${currentZone.type === 'private' ? ', a private room' : ''}.`
-                  : 'Child location unknown, so the camera stays off.'}
-              </div>
-            </div>
-          </div>
-
-          <Card className="stack">
-            <h2>Presence sensors</h2>
-            <div className="room-grid">
-              {zones.map((zone) => (
-                <button
-                  key={zone.id}
-                  type="button"
-                  className={`room-button ${state.zone === zone.id ? 'is-here' : ''}`}
-                  onClick={() => home.send({ type: 'zone_enter', zone: zone.id })}
-                >
-                  <strong>{zone.name}</strong>
-                  <span className="row" style={{ gap: 6 }}>
-                    {zone.type === 'private' ? (
-                      <Badge tone="info">Private</Badge>
-                    ) : (
-                      <Badge tone="neutral">Camera OK</Badge>
-                    )}
-                    {state.zone === zone.id && <Badge tone="success">Child is here</Badge>}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <div>
-              <Button
-                icon="home"
-                disabled={!state.zone}
-                onClick={() => home.send({ type: 'zone_leave' })}
+    <div className="sim3d">
+      <header className="sim3d-top">
+        <Link to="/" className="brand">
+          <img src="/favicon.svg" alt="" />
+          Bhavya AI
+        </Link>
+        <h1>Home simulator</h1>
+        <ConnectionBadge connected={home.connected} />
+        <div className="sim3d-tools">
+          <button
+            type="button"
+            className={`sim3d-tool ${logOpen ? 'is-on' : ''}`}
+            onClick={() => setLogOpen((open) => !open)}
+            aria-pressed={logOpen}
+          >
+            🧠 Bhavya&apos;s brain
+            {unread > 0 && <span className="sim3d-count">{unread > 99 ? '99+' : unread}</span>}
+          </button>
+          <button
+            type="button"
+            className={`sim3d-tool ${lightsOpen ? 'is-on' : ''}`}
+            onClick={() => setLightsOpen((open) => !open)}
+            aria-pressed={lightsOpen}
+          >
+            💡 Lights
+          </button>
+          {use3d && (
+            <>
+              <button
+                type="button"
+                className={`sim3d-tool ${follow ? 'is-on' : ''}`}
+                onClick={() => setFollow((on) => !on)}
+                aria-pressed={follow}
+                title="Keep the camera on the child"
               >
-                Child leaves the room
-              </Button>
-            </div>
-          </Card>
+                🎥 Follow child
+              </button>
+              <button
+                type="button"
+                className="sim3d-tool"
+                onClick={() => setQuality((q) => (q === 'high' ? 'fast' : 'high'))}
+                title="Fast is smoother on slower laptops"
+              >
+                {quality === 'high' ? '✨ High quality' : '⚡ Fast'}
+              </button>
+              <button
+                type="button"
+                className={`sim3d-tool ${showHelp ? 'is-on' : ''}`}
+                onClick={() => setShowHelp((on) => !on)}
+                aria-label="How to play"
+                title="How to play"
+              >
+                ?
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            className="sim3d-tool"
+            onClick={() => setView(view === '3d' ? 'simple' : '3d')}
+            disabled={view === 'simple' && !!unavailable}
+          >
+            {view === '3d' ? '▦ Simple view' : '🧊 3D view'}
+          </button>
+        </div>
+      </header>
 
-          <div className="grid-2">
-            <Card className="stack">
-              <h2>Smart lights</h2>
-              {Object.keys(state.lights).length === 0 && (
-                <p className="muted">No lights configured.</p>
-              )}
-              {Object.entries(state.lights).map(([device, on]) => {
-                const zone = zones.find((z) => z.light === device);
+      <div className="sim3d-body">
+        <section className="sim3d-stage" aria-label="Home">
+          {!state || !settings.data ? (
+            <div className="sim3d-center">
+              <Spinner label="Connecting to the home hub…" />
+            </div>
+          ) : use3d ? (
+            <Home3DView
+              state={state}
+              zones={zones}
+              send={home.send}
+              follow={follow}
+              quality={quality}
+              showHelp={showHelp}
+              onCloseHelp={() => setShowHelp(false)}
+              onUnavailable={setUnavailable}
+            />
+          ) : (
+            <div className="sim3d-simple">
+              {unavailable && <Notice tone="info">{unavailable}</Notice>}
+              <SimpleSimulator home={home} zones={zones} />
+            </div>
+          )}
+
+          {(home.error ?? settings.error) && (
+            <div className="sim3d-error">
+              <ErrorNotice error={home.error ?? settings.error} />
+            </div>
+          )}
+
+          {lightsOpen && state && (
+            <div className="sim3d-panel sim3d-lights" role="dialog" aria-label="Lights">
+              <header>
+                <b>💡 Smart lights</b>
+                <button
+                  type="button"
+                  className="sim3d-close"
+                  onClick={() => setLightsOpen(false)}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </header>
+              {lights.length === 0 && <p className="muted">No lights are set up.</p>}
+              {lights.map((zone) => {
+                const device = zone.light ?? '';
+                const on = state.lights[device] ?? false;
                 return (
-                  <div key={device} className="light-toggle">
-                    <span className={`bulb ${on ? 'is-on' : ''}`}>
-                      <Icon name="light" />
-                    </span>
-                    <span className="spacer">{zone?.name ?? device}</span>
-                    <Button
-                      size="sm"
-                      onClick={() => home.send({ type: 'set_light', device, on: !on })}
-                    >
-                      Turn {on ? 'off' : 'on'}
-                    </Button>
-                  </div>
+                  <button
+                    key={zone.id}
+                    type="button"
+                    className={`sim3d-light ${on ? 'is-on' : ''}`}
+                    onClick={() => home.send({ type: 'set_light', device, on: !on })}
+                  >
+                    <span className="sim3d-bulb" aria-hidden="true" />
+                    <span className="spacer">{zone.name}</span>
+                    <b>{on ? 'On' : 'Off'}</b>
+                  </button>
                 );
               })}
-            </Card>
+            </div>
+          )}
 
-            <Card className="stack">
-              <h2>Active routine</h2>
-              {!state.assistantEnabled && <Badge tone="warn">Helper paused by the child</Badge>}
-              {state.run ? (
-                <>
-                  <strong>{state.run.missionTitle}</strong>
-                  <span>
-                    Step {state.run.stepIndex + 1} of {state.run.totalSteps}:{' '}
-                    {state.run.step.action}
-                  </span>
-                  <span className="row" style={{ gap: 6 }}>
-                    <Badge tone="info">{LEVEL_LABELS[state.run.level]}</Badge>
-                    {state.run.visionActive && <Badge tone="neutral">Camera checking</Badge>}
-                    {state.run.onBreak && <Badge tone="warn">On a break</Badge>}
-                    {state.run.helpRequested && <Badge tone="danger">Asked for help</Badge>}
-                  </span>
-                </>
-              ) : (
-                <p className="muted">
-                  {state.lastCompleted
-                    ? `Last finished: ${state.lastCompleted.missionTitle}.`
-                    : 'No routine running.'}
-                </p>
-              )}
-              {state.paused && (
-                <span className="small">
-                  Waiting: {state.paused.missionTitle} (step {state.paused.stepIndex + 1} of{' '}
-                  {state.paused.totalSteps})
-                </span>
-              )}
-              {state.suggestion && (
-                <span className="row" style={{ gap: 6 }}>
-                  <Badge tone="info">Asking</Badge>
-                  <span className="small">{state.suggestion.prompt}</span>
-                </span>
-              )}
-              {state.scanning && <Badge tone="neutral">Glasses looking for routines</Badge>}
-            </Card>
-          </div>
-        </div>
-      )}
-    </main>
+          {logOpen && <BrainLog traces={home.traces} onClose={() => setLogOpen(false)} />}
+        </section>
+
+        <aside className="sim3d-side" aria-label="Child's phone">
+          <div className="sim3d-side-title">Child&apos;s app</div>
+          <PhoneFrame src="/child" />
+          <p className="sim3d-side-note">Tap Start in the phone to turn on its voice.</p>
+        </aside>
+      </div>
+    </div>
   );
+}
+
+/** How many log lines arrived since the log was last open. */
+function useUnread(traces: { id: string }[], open: boolean): number {
+  const [seenId, setSeenId] = useState<string | null>(null);
+  const newest = traces[0]?.id ?? null;
+  useEffect(() => {
+    if (open) setSeenId(newest);
+  }, [open, newest]);
+  if (open) return 0;
+  const index = seenId ? traces.findIndex((t) => t.id === seenId) : -1;
+  return index === -1 ? traces.length : index;
 }
