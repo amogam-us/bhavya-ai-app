@@ -20,7 +20,7 @@ import {
   type RoomSlot,
 } from './plan';
 
-export type Quality = 'high' | 'fast';
+type Quality = 'high' | 'fast';
 
 /** What the hub says about a room, shown in 3D. */
 export interface RoomInfo {
@@ -47,6 +47,10 @@ export interface WorldEvents {
 }
 
 const RADIUS = 0.22;
+/** Below this frame rate the soft-shadow effect is turned off, so walking stays smooth. */
+const MIN_SMOOTH_FPS = 30;
+/** Frames measured, after a short warm-up, before deciding the quality. */
+const FPS_SAMPLE_FRAMES = 90;
 const WALK_SPEED = 2.3;
 const RUN_SPEED = 3.8;
 /** After the child moves, the hub's echo of an older room is ignored for this long. */
@@ -88,7 +92,9 @@ export class HomeWorld {
   private readonly child = new ChildFigure();
   private readonly environment: THREE.Texture;
   private composer: EffectComposer | null = null;
-  private quality: Quality;
+  private quality: Quality = 'high';
+  /** Frame-rate check after start-up; null once decided. */
+  private fpsCheck: { frames: number; seconds: number } | null = { frames: 0, seconds: 0 };
 
   private readonly keys = new Set<string>();
   private route: Point[] = [];
@@ -96,7 +102,6 @@ export class HomeWorld {
   private lastMoveAt = -Infinity;
   private yaw = Math.PI;
   private desiredYaw = Math.PI;
-  private follow = false;
   private rooms: Record<RoomSlot, RoomInfo> | null = null;
   private childInfo: ChildInfo = { cameraOn: false, looking: false, bubble: null };
   private readonly clock = new THREE.Clock();
@@ -108,9 +113,7 @@ export class HomeWorld {
   constructor(
     private readonly container: HTMLElement,
     private readonly events: WorldEvents,
-    quality: Quality,
   ) {
-    this.quality = quality;
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: 'high-performance',
@@ -151,9 +154,10 @@ export class HomeWorld {
     this.scene.add(this.child.group);
     this.placeChild(spotOf('outside'));
 
-    this.camera.position.set(0.5, 15.5, 13.5);
+    // Framed a little towards the front, so the garden path stays above the room buttons.
+    this.camera.position.set(0.5, 15.5, 14.3);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.target.set(0, 0, 0.8);
+    this.controls.target.set(0, 0, 1.6);
     this.controls.enableDamping = true;
     this.controls.enablePan = false;
     this.controls.minDistance = 5;
@@ -176,14 +180,12 @@ export class HomeWorld {
     for (const slot of SLOTS) {
       const info = rooms[slot];
       const visual = this.house.rooms[slot];
-      const badge = !info.configured
-        ? '<span class="is-unset">Not set up in the hub</span>'
-        : info.private
-          ? '<span class="is-private">🔒 Private · camera off</span>'
-          : '<span>📷 Camera OK</span>';
-      visual.labelEl.innerHTML = `<b></b>${badge}`;
-      const name = visual.labelEl.querySelector('b');
-      if (name) name.textContent = info.name;
+      // One short line: the name, with a lock for private rooms.
+      const label = visual.labelEl;
+      label.textContent = `${info.private ? '🔒 ' : ''}${info.name}`;
+      label.classList.toggle('is-private', info.configured && info.private);
+      label.classList.toggle('is-unset', !info.configured);
+      label.title = info.configured ? '' : 'Not set up in the hub';
       this.house.lamps[slot].on = info.lightOn === true;
     }
   }
@@ -217,17 +219,6 @@ export class HomeWorld {
     this.route = pathBetween(this.place ?? locate(...this.childPoint(), 0), place);
   }
 
-  setFollow(follow: boolean): void {
-    this.follow = follow;
-  }
-
-  setQuality(quality: Quality): void {
-    if (quality === this.quality) return;
-    this.quality = quality;
-    this.applyQuality();
-    this.resize();
-  }
-
   dispose(): void {
     this.renderer.setAnimationLoop(null);
     for (const undo of this.cleanup) undo();
@@ -245,8 +236,10 @@ export class HomeWorld {
   // --------------------------------------------------------------- frame loop
 
   private frame(): void {
-    const dt = Math.min(this.clock.getDelta(), 0.05);
+    const rawDt = this.clock.getDelta();
+    const dt = Math.min(rawDt, 0.05);
     const t = this.clock.elapsedTime;
+    this.checkFrameRate(rawDt, t);
     const speed = this.move(dt);
 
     let diff = this.desiredYaw - this.yaw;
@@ -274,21 +267,29 @@ export class HomeWorld {
       sensor.led.emissiveIntensity = sensor.flash * 3;
     }
 
-    if (this.follow) {
-      const [x, z] = this.childPoint();
-      const k = Math.min(1, dt * 3);
-      const dx = (x - this.controls.target.x) * k;
-      const dz = (z + 0.5 - this.controls.target.z) * k;
-      this.controls.target.x += dx;
-      this.controls.target.z += dz;
-      this.camera.position.x += dx;
-      this.camera.position.z += dz;
-    }
     this.controls.update();
 
     if (this.composer) this.composer.render(dt);
     else this.renderer.render(this.scene, this.camera);
     this.labels.render(this.scene, this.camera);
+  }
+
+  /**
+   * Starts in high quality and, if this computer cannot keep up, switches once to
+   * the lighter mode. Long pauses (a hidden tab) are not counted.
+   */
+  private checkFrameRate(dt: number, elapsed: number): void {
+    const check = this.fpsCheck;
+    if (!check || elapsed < 1 || dt > 0.25) return;
+    check.frames += 1;
+    check.seconds += dt;
+    if (check.frames < FPS_SAMPLE_FRAMES) return;
+    this.fpsCheck = null;
+    if (check.frames / check.seconds < MIN_SMOOTH_FPS && this.quality === 'high') {
+      this.quality = 'fast';
+      this.applyQuality();
+      this.resize();
+    }
   }
 
   /** Moves the child for one frame and returns its speed. */

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BOARD_PHRASE_IDS } from './board';
-import type { HomeState, Notification, TraceEntry } from './state';
+import type { HomeState, Notification } from './state';
 
 export const clientRoleSchema = z.enum(['child', 'parent', 'simulator']);
 export type ClientRole = z.infer<typeof clientRoleSchema>;
@@ -33,7 +33,4 @@ export type ServerMessage =
   | { type: 'state'; state: HomeState }
   | { type: 'notification'; notification: Notification }
   | { type: 'notifications'; items: Notification[] }
-  /** Simulator only: one new line for the brain log, or the recent lines on connect. */
-  | { type: 'trace'; entry: TraceEntry }
-  | { type: 'traces'; items: TraceEntry[] }
   | { type: 'error'; message: string };

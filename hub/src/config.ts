@@ -1,8 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { AppOptions } from '@bhavya/shared';
 import { z } from 'zod';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+/** An option word, accepted in any letter case and with spaces around it. */
+const word = z.string().trim().toLowerCase();
 
 const envSchema = z.object({
   MODEL_API_KEY: z
@@ -18,6 +22,10 @@ const envSchema = z.object({
   DATA_DIR: z.string().default('data'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   NODE_ENV: z.string().default('development'),
+  // Home simulator: "hide" removes its link from the home page (the page still works).
+  SIMULATOR: word.pipe(z.enum(['show', 'hide'])).default('show'),
+  // Simulator views: "both" (3D, with a button for the simple view), "3d" or "simple".
+  SIMULATOR_VIEW: word.pipe(z.enum(['both', '3d', 'simple'])).default('both'),
 });
 
 export interface AppConfig {
@@ -31,6 +39,7 @@ export interface AppConfig {
   webDistDir: string;
   logLevel: z.infer<typeof envSchema>['LOG_LEVEL'];
   prettyLogs: boolean;
+  simulator: AppOptions['simulator'];
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -52,5 +61,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     webDistDir: path.join(REPO_ROOT, 'web', 'dist'),
     logLevel: e.LOG_LEVEL,
     prettyLogs: e.NODE_ENV !== 'production',
+    simulator: { visible: e.SIMULATOR === 'show', view: e.SIMULATOR_VIEW },
   };
 }

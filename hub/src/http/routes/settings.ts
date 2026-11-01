@@ -1,4 +1,10 @@
-import { BOARD_PHRASES, childProfileSchema, findBoardPhrase, zoneSchema } from '@bhavya/shared';
+import {
+  BOARD_PHRASES,
+  childProfileSchema,
+  findBoardPhrase,
+  zoneSchema,
+  type AppOptions,
+} from '@bhavya/shared';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { HttpError, parseOrThrow } from '../../lib/errors';
@@ -21,6 +27,9 @@ const zonesSchema = z
 
 export function settingsRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { settings } = ctx.repos;
+
+  /** Options set in the hub's .env, such as how the home simulator is offered. */
+  app.get('/api/options', async (): Promise<AppOptions> => ({ simulator: ctx.config.simulator }));
 
   app.get('/api/settings', async () => ({
     profile: settings.getProfile(),

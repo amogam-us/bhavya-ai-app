@@ -1,4 +1,5 @@
 import type {
+  AppOptions,
   BOARD_PHRASES,
   ChildProfile,
   DraftFromDemoRequest,
@@ -85,6 +86,7 @@ export const api = {
   uploadCard: (id: string, stepId: string, image: string) =>
     request<Mission>('PUT', stepCardPath(id, stepId), { image }),
 
+  options: () => request<AppOptions>('GET', '/api/options'),
   settings: () => request<Settings>('GET', '/api/settings'),
   saveProfile: (profile: ChildProfile) =>
     request<ChildProfile>('PUT', '/api/settings/profile', profile),
