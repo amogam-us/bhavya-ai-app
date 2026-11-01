@@ -21,6 +21,13 @@ export function ChildApp() {
   const home = useHome('child');
   const settings = useLoader(() => api.settings(), []);
   const board = useLoader(() => api.board(), []);
+  const options = useLoader(() => api.options(), []);
+  const cameraDebug = options.data?.cameraDebug ?? false;
+  // "?camera=off" (the simulator's phone preview) shows the screens without using a camera,
+  // so a second camera cannot interfere with the child's real phone or glasses.
+  const [cameraHere] = useState(
+    () => new URLSearchParams(window.location.search).get('camera') !== 'off',
+  );
   const profile = settings.data?.profile ?? DEFAULT_PROFILE;
   const [started, setStarted] = useState(false);
 
@@ -82,6 +89,8 @@ export function ChildApp() {
               camera={home.state.camera}
               profile={profile}
               voice={voice}
+              cameraDebug={cameraDebug}
+              cameraHere={cameraHere}
               send={home.send}
               onRepeat={say}
             />
@@ -90,6 +99,8 @@ export function ChildApp() {
               home={home}
               profile={profile}
               voice={voice}
+              cameraDebug={cameraDebug}
+              cameraHere={cameraHere}
               icons={board.data?.icons ?? {}}
               onSay={sayPhrase}
             />
@@ -129,11 +140,14 @@ interface HomeScreenProps {
   home: HomeConnection;
   profile: ChildProfile;
   voice: VoiceOptions;
+  cameraDebug: boolean;
+  cameraHere: boolean;
   icons: Record<string, string>;
   onSay: (id: BoardPhraseId, label: string) => void;
 }
 
-function HomeScreen({ home, profile, voice, icons, onSay }: HomeScreenProps) {
+function HomeScreen(props: HomeScreenProps) {
+  const { home, profile, voice, cameraDebug, cameraHere, icons, onSay } = props;
   const missions = useLoader(() => api.missions(), []);
   const state = home.state;
   const [now, setNow] = useState(() => Date.now());
@@ -174,7 +188,14 @@ function HomeScreen({ home, profile, voice, icons, onSay }: HomeScreenProps) {
         Hi {profile.name}!
       </h1>
       {finished && <p className="celebrate">You finished {finished.missionTitle}!</p>}
-      {state.scanning && <IdleScanner />}
+      {state.scanning &&
+        (cameraHere ? (
+          <IdleScanner debug={cameraDebug} />
+        ) : (
+          <p className="camera-elsewhere">
+            👓 The glasses are looking around on the child&apos;s phone
+          </p>
+        ))}
       <div className="talk-row">
         <TalkButton voice={voice} label="Tell me what you need" />
       </div>

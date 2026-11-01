@@ -165,11 +165,22 @@ export function runtimeRoutes(app: FastifyInstance, ctx: AppContext): void {
         routines,
         zones: repos.settings.getZones(),
       });
+      const routine = scene.missionId
+        ? (routines.find((m) => m.id === scene.missionId)?.title ?? null)
+        : null;
       engine.trace(
         'muse',
-        describeScene(scene, (id) => routines.find((m) => m.id === id)?.title),
+        describeScene(scene, () => routine ?? undefined),
       );
-      return { outcome: engine.applyScan(scene) };
+      return {
+        outcome: engine.applyScan(scene),
+        detail: {
+          seen: scene.seen,
+          private: scene.private,
+          routine,
+          confidence: scene.confidence,
+        },
+      };
     } finally {
       scanBusy = false;
     }

@@ -1,4 +1,4 @@
-import { FEATURES, type ObjectBox, type RunView } from '@bhavya/shared';
+import { FEATURES, type FrameCheckResponse, type ObjectBox, type RunView } from '@bhavya/shared';
 import { useCallback, useEffect, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { api, ApiError } from '../../lib/api';
@@ -13,13 +13,15 @@ const HIGHLIGHT_DELAY_MS = 800;
 interface CameraPanelProps {
   run: RunView;
   onHint: (hint: string | null) => void;
+  /** Shows what Muse answered for each frame (hub option CAMERA_DEBUG). */
+  debug: boolean;
 }
 
 /**
  * Live view for camera-OK steps. It is only mounted while the hub says the
  * camera may watch this step; unmounting stops the camera immediately.
  */
-export function CameraPanel({ run, onHint }: CameraPanelProps) {
+export function CameraPanel({ run, onHint, debug }: CameraPanelProps) {
   const camera = useCamera(true);
   const { capture, status } = camera;
   const { runId, stepIndex, highlightObject } = run;
@@ -27,10 +29,12 @@ export function CameraPanel({ run, onHint }: CameraPanelProps) {
   const [boxes, setBoxes] = useState<ObjectBox[]>([]);
   const [finding, setFinding] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [lastCheck, setLastCheck] = useState<FrameCheckResponse | null>(null);
 
   useEffect(() => {
     setBoxes([]);
     setNote(null);
+    setLastCheck(null);
   }, [stepIndex]);
 
   // Step check loop.
@@ -43,7 +47,10 @@ export function CameraPanel({ run, onHint }: CameraPanelProps) {
       if (image) {
         try {
           const result = await api.checkFrame(runId, stepIndex, image);
-          if (!stopped) onHint(result.done ? null : result.hint);
+          if (!stopped) {
+            setLastCheck(result);
+            onHint(result.done ? null : result.hint);
+          }
         } catch (e) {
           // 409 means the step changed or the camera was closed meanwhile; that is expected.
           if (!stopped && !(e instanceof ApiError && e.status === 409))
@@ -107,6 +114,13 @@ export function CameraPanel({ run, onHint }: CameraPanelProps) {
           }}
         />
       ))}
+      {debug && (
+        <p className="camera-debug is-overlay">
+          {lastCheck
+            ? `Muse step check: ${lastCheck.done ? 'done' : 'not yet'} (${lastCheck.confidence.toFixed(2)})`
+            : 'Muse step check: waiting for the first frame…'}
+        </p>
+      )}
       <div className="camera-overlay">
         <span className="camera-status">
           {status === 'starting' &&

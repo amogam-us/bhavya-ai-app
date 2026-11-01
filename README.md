@@ -66,12 +66,13 @@ smart lights:
 - To follow the hub's decisions step by step (sensors, privacy, Muse answers, engine), start the
   hub with `LOG_LEVEL=debug`.
 
-Two options in `.env` (restart the hub after changing them):
+Options in `.env` (restart the hub after changing them):
 
 | Option | Values | What it does |
 |---|---|---|
 | `SIMULATOR` | `show` (default), `hide` | `hide` removes the simulator's link from the home page; `/simulator` still works. |
 | `SIMULATOR_VIEW` | `both` (default), `3d`, `simple` | `both`: 3D with a **Simple view** button. `3d`: 3D only. `simple`: the button-based simulator only. |
+| `CAMERA_DEBUG` | `off` (default), `on` | For testing: the child app shows what Muse saw in each glasses frame and each step check. |
 
 Rooms are matched to hub rooms by id (`restroom`, `bedroom`, `living_room`, `kitchen`), so names,
 privacy and lights follow the parent's settings.

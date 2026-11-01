@@ -40,8 +40,7 @@ export function SimulatorPage() {
     <div className="sim3d">
       <header className="sim3d-top">
         <Link to="/" className="brand">
-          <img src="/favicon.svg" alt="" />
-          Bhavya AI
+          <img src="/logo-wordmark.png" alt="Bhavya" width={121} height={38} />
         </Link>
         <h1>Home simulator</h1>
         <ConnectionBadge connected={home.connected} />
@@ -132,7 +131,8 @@ export function SimulatorPage() {
         </section>
 
         <aside className="sim3d-side" aria-label="Child's phone">
-          <PhoneFrame src="/child" />
+          {/* The preview never uses this computer's camera: the camera belongs to the child's phone or glasses. */}
+          <PhoneFrame src="/child?camera=off" />
           <p className="sim3d-side-note">The child&apos;s app. Tap Start to turn on its voice.</p>
         </aside>
       </div>

@@ -1,14 +1,19 @@
 /* ------------------------------------------------------------ tokens */
 :root {
-  --bg: #f4f6f8;
+  /* Colours from the Bhavya logo: blue is the primary colour. */
+  --bg: #f3f7fc;
   --surface: #ffffff;
-  --surface-2: #f8fafb;
-  --text: #1c2530;
-  --muted: #5d6b7a;
-  --border: #dfe5ea;
-  --primary: #2f6f73;
-  --primary-strong: #245659;
-  --primary-weak: #e3f1f1;
+  --surface-2: #f7fafe;
+  --text: #14243d;
+  --muted: #5a6b82;
+  --border: #dbe4ef;
+  --primary: #1565b5;
+  --primary-strong: #0c4f93;
+  --primary-weak: #e6f0fb;
+  --brand-teal: #23a99f;
+  --brand-amber: #f5a800;
+  --brand-coral: #ec6f7f;
+  --brand-purple: #7b5ea7;
   --success: #2b7a3d;
   --success-weak: #e5f4e8;
   --warn: #9a5b00;
@@ -20,7 +25,7 @@
   --radius: 14px;
   --radius-sm: 10px;
   --shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 2px 8px rgb(16 24 40 / 5%);
-  --focus: 0 0 0 3px rgb(47 111 115 / 35%);
+  --focus: 0 0 0 3px rgb(21 101 181 / 32%);
   color-scheme: light;
   font-family:
     system-ui,
@@ -428,7 +433,13 @@ th {
 .landing {
   max-width: 980px;
   margin: 0 auto;
-  padding: 48px 20px;
+  padding: 40px 20px 48px;
+}
+body:has(.landing) {
+  background:
+    radial-gradient(60rem 30rem at 85% -10%, rgb(123 94 167 / 12%), transparent 60%),
+    radial-gradient(50rem 28rem at -10% 10%, rgb(21 101 181 / 12%), transparent 60%),
+    radial-gradient(40rem 24rem at 60% 110%, rgb(35 169 159 / 10%), transparent 60%), var(--bg);
 }
 .brand {
   display: flex;
@@ -440,8 +451,15 @@ th {
   text-decoration: none;
 }
 .brand img {
-  width: 34px;
-  height: 34px;
+  display: block;
+  height: 38px;
+  width: auto;
+}
+.landing-logo {
+  display: block;
+  width: min(100%, 540px);
+  height: auto;
+  margin-left: -10px;
 }
 .landing h1 {
   font-size: 2.1rem;
@@ -485,6 +503,15 @@ th {
   place-items: center;
   background: var(--primary-weak);
   color: var(--primary);
+}
+/* Each tile picks up one of the logo's colours. */
+.tile:nth-child(2) .tile-icon {
+  background: #e3f6f4;
+  color: var(--brand-teal);
+}
+.tile:nth-child(3) .tile-icon {
+  background: #fff3d9;
+  color: #b97a00;
 }
 
 /* ------------------------------------------------------ parent layout */
@@ -765,8 +792,8 @@ th {
 
 /* ------------------------------------------------------------ child app */
 .child {
-  --child-bg: #eef5f4;
-  --child-ink: #173436;
+  --child-bg: #eef4fb;
+  --child-ink: #13294b;
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--child-bg);
@@ -835,20 +862,20 @@ th {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #c8dad8;
+  background: #c9d8ea;
 }
 .progress-dots span.done {
-  background: #4f9a94;
+  background: #5b93d1;
 }
 .progress-dots span.current {
   background: var(--primary);
-  outline: 3px solid #a7d0cb;
+  outline: 3px solid #a9c9ee;
 }
 .step-card {
   background: #fff;
   border-radius: 24px;
   padding: 22px;
-  box-shadow: 0 4px 18px rgb(23 52 54 / 10%);
+  box-shadow: 0 4px 18px rgb(19 41 75 / 10%);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -859,7 +886,7 @@ th {
   width: min(100%, 340px);
   aspect-ratio: 1;
   border-radius: 20px;
-  background: #f2f7f6;
+  background: #f1f6fc;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -913,10 +940,10 @@ th {
   cursor: pointer;
   background: #fff;
   color: var(--child-ink);
-  box-shadow: 0 2px 8px rgb(23 52 54 / 10%);
+  box-shadow: 0 2px 8px rgb(19 41 75 / 10%);
 }
 .child-btn:focus-visible {
-  outline: 4px solid #8cc7c1;
+  outline: 4px solid #8fb9e8;
 }
 .child-btn:disabled {
   opacity: 0.5;
@@ -966,25 +993,78 @@ th {
 .suggestion-actions .child-btn.done {
   grid-column: auto;
 }
-.scan-chip {
-  align-self: center;
-  display: inline-flex;
+.scan-card {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 6px 14px 6px 6px;
+  gap: 8px;
+}
+.scan-view {
+  position: relative;
+  width: min(100%, 380px);
+  aspect-ratio: 4 / 3;
+  max-height: 300px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #0f1d2b;
+  box-shadow: 0 4px 18px rgb(19 41 75 / 14%);
+}
+.scan-view video,
+.scan-view img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.scan-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+}
+.scan-label {
+  margin: 0;
+  padding: 6px 14px;
   border-radius: 999px;
-  background: #dbe8fb;
-  color: #244b8e;
+  background: var(--info-weak);
+  color: var(--info);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+.camera-elsewhere {
+  align-self: center;
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--info-weak);
+  color: var(--info);
   font-size: 0.9rem;
   font-weight: 700;
+  text-align: center;
 }
-.scan-chip video,
-.scan-chip img {
-  width: 56px;
-  height: 42px;
-  object-fit: cover;
-  border-radius: 999px;
-  background: #0f1d1e;
+.camera-debug {
+  width: min(100%, 380px);
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #1e2a38;
+  color: #e6f0ff;
+  font:
+    600 0.78rem/1.4 ui-monospace,
+    monospace;
+}
+.camera-debug.is-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  width: auto;
+  background: rgb(15 29 43 / 78%);
 }
 @media (prefers-reduced-motion: reduce) {
   .child-btn.talk.is-listening {
@@ -1047,7 +1127,7 @@ th {
   font-weight: 800;
   color: var(--child-ink);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgb(23 52 54 / 10%);
+  box-shadow: 0 2px 8px rgb(19 41 75 / 10%);
 }
 .mission-tile .step-picture {
   width: 100%;
@@ -1075,7 +1155,7 @@ th {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgb(23 52 54 / 10%);
+  box-shadow: 0 2px 6px rgb(19 41 75 / 10%);
 }
 .board-tile img,
 .board-tile .board-fallback {
@@ -1083,7 +1163,7 @@ th {
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 12px;
-  background: #e5f1ef;
+  background: #e8f1fb;
 }
 .board-fallback {
   display: grid;
@@ -1340,7 +1420,7 @@ th {
   padding: 5px 10px;
   border-radius: 10px;
   background: #fff;
-  color: #173436;
+  color: #13294b;
   font-size: 12px;
   font-weight: 700;
   line-height: 1.3;
@@ -1461,7 +1541,7 @@ th {
   display: block;
   border: 0;
   border-radius: 40px;
-  background: #eef5f4;
+  background: #eef4fb;
 }
 @media (max-width: 1200px) {
   .sim3d-hint {

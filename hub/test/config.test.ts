@@ -9,6 +9,8 @@ const env = (extra: Record<string, string> = {}) => ({
 describe('loadConfig', () => {
   it('shows the simulator with both views by default', () => {
     expect(loadConfig(env()).simulator).toEqual({ visible: true, view: 'both' });
+    expect(loadConfig(env()).cameraDebug).toBe(false);
+    expect(loadConfig(env({ CAMERA_DEBUG: 'ON' })).cameraDebug).toBe(true);
   });
 
   it('reads the simulator options in any letter case', () => {
