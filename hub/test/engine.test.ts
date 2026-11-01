@@ -381,6 +381,18 @@ describe('MissionEngine', () => {
       engine.dispose();
     });
 
+    it('uses the hub option for the pause after a private place', () => {
+      const engine = new MissionEngine({ repos: h.repos, privatePauseMs: 60_000 });
+      enableGlassesSuggestions(h);
+      engine.refresh();
+      expect(engine.applyScan(privatePlace)).toBe('private');
+      vi.advanceTimersByTime(59_000);
+      expect(engine.getState().scanning).toBe(false);
+      vi.advanceTimersByTime(1_000);
+      expect(engine.getState().scanning).toBe(true);
+      engine.dispose();
+    });
+
     it('stays off until a parent turns it on', () => {
       expect(h.state().scanning).toBe(false);
       expect(h.engine.applyScan(sees(h.mission('Pack').id))).toBe('ignored');

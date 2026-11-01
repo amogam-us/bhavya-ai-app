@@ -115,6 +115,8 @@ export interface AppOptions {
   };
   /** False when finding routines with the glasses camera is turned off for this hub. */
   glassesSuggestions: boolean;
+  /** Minutes the glasses stop looking around after seeing a private place. */
+  privatePauseMinutes: number;
   /** Shows on the child's screen what Muse saw in each camera frame, for testing. */
   cameraDebug: boolean;
 }

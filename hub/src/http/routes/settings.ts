@@ -32,6 +32,7 @@ export function settingsRoutes(app: FastifyInstance, ctx: AppContext): void {
   app.get('/api/options', async (): Promise<AppOptions> => ({
     simulator: ctx.config.simulator,
     glassesSuggestions: ctx.config.glassesSuggestions,
+    privatePauseMinutes: ctx.config.privatePauseMinutes,
     cameraDebug: ctx.config.cameraDebug,
   }));
 

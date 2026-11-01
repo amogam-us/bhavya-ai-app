@@ -73,6 +73,7 @@ Options in `.env` (restart the hub after changing them):
 | `SIMULATOR` | `show` (default), `hide` | `hide` removes the simulator's link from the home page; `/simulator` still works. |
 | `SIMULATOR_VIEW` | `both` (default), `3d`, `simple` | `both`: 3D with a **Simple view** button. `3d`: 3D only. `simple`: the button-based simulator only. |
 | `GLASSES_SUGGESTIONS` | `on` (default), `off` | `off` turns off finding routines with the glasses camera for the whole hub; the parent setting is hidden. |
+| `PRIVATE_PAUSE_MINUTES` | `10` (default), `1` to `60` | Minutes the glasses stop looking around after seeing a private place. Use `1` for demos. |
 | `CAMERA_DEBUG` | `off` (default), `on` | For testing: the child app shows what Muse saw in each glasses frame and each step check. |
 
 Rooms are matched to hub rooms by id (`restroom`, `bedroom`, `living_room`, `kitchen`), so names,

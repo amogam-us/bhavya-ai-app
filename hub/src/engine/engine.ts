@@ -35,7 +35,7 @@ export const VISION_CONFIDENCE_THRESHOLD = 0.7;
 export const INTENT_CONFIDENCE = 0.75;
 /** A spoken routine request between this and INTENT_CONFIDENCE is asked about instead. */
 export const MAYBE_CONFIDENCE = 0.5;
-/** The glasses stop looking around for this long after seeing a private place. */
+/** By default the glasses stop looking around for this long after seeing a private place. */
 export const PRIVATE_SCAN_PAUSE_MS = 10 * 60_000;
 /** A routine the child said no to is not suggested again for this long. */
 export const DECLINE_COOLDOWN_MS = 15 * 60_000;
@@ -123,6 +123,8 @@ export interface EngineOptions {
   newId?: () => string;
   /** False turns off finding routines with the glasses camera (hub option). Default true. */
   glassesSuggestions?: boolean;
+  /** How long looking around pauses after a private place (hub option). */
+  privatePauseMs?: number;
 }
 
 /**
@@ -137,6 +139,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   private readonly now: () => number;
   private readonly makeId: () => string;
   private readonly suggestionsAvailable: boolean;
+  private readonly privatePauseMs: number;
 
   private zoneId: string | null = null;
   private assistantEnabled = true;
@@ -164,6 +167,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     this.now = options.now ?? Date.now;
     this.makeId = options.newId ?? newId;
     this.suggestionsAvailable = options.glassesSuggestions ?? true;
+    this.privatePauseMs = options.privatePauseMs ?? PRIVATE_SCAN_PAUSE_MS;
   }
 
   // ---------------------------------------------------------------- queries
@@ -470,7 +474,11 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     if (result.private) {
       this.lastSceneMissionId = null;
       this.pauseScanning();
-      this.trace('privacy', 'Private place seen → glasses stop looking for 10 minutes');
+      const minutes = Math.round(this.privatePauseMs / 60_000);
+      this.trace(
+        'privacy',
+        `Private place seen → glasses stop looking for ${minutes} minute${minutes === 1 ? '' : 's'}`,
+      );
       this.emitState();
       return 'private';
     }
@@ -630,13 +638,13 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   }
 
   private pauseScanning(): void {
-    this.privateUntil = this.now() + PRIVATE_SCAN_PAUSE_MS;
+    this.privateUntil = this.now() + this.privatePauseMs;
     if (this.privateTimer) clearTimeout(this.privateTimer);
     this.privateTimer = setTimeout(() => {
       this.privateTimer = null;
       this.trace('privacy', 'Glasses may look around again');
       this.emitState();
-    }, PRIVATE_SCAN_PAUSE_MS);
+    }, this.privatePauseMs);
   }
 
   private isDeclined(missionId: string): boolean {
