@@ -1,4 +1,4 @@
-import type { Step } from '@bhavya/shared';
+import { FEATURES, type Step } from '@bhavya/shared';
 import { useEffect, useState } from 'react';
 import { Button, Field } from '../../components/ui';
 
@@ -39,7 +39,7 @@ export function StepEditor(props: StepEditorProps) {
         >
           {step.card ? 'New picture' : 'Make picture'}
         </Button>
-        {props.hasDemoFrame && step.object && (
+        {FEATURES.objectFinder && props.hasDemoFrame && step.object && (
           <Button
             size="sm"
             icon="image"
@@ -132,14 +132,16 @@ export function StepEditor(props: StepEditorProps) {
               }
             />
           </Field>
-          <Field label="Object to find" hint="Used by the object finder. Optional.">
-            <input
-              type="text"
-              maxLength={40}
-              value={step.object ?? ''}
-              onChange={(e) => props.onChange({ object: e.target.value || null })}
-            />
-          </Field>
+          {FEATURES.objectFinder && (
+            <Field label="Object to find" hint="Used by the object finder. Optional.">
+              <input
+                type="text"
+                maxLength={40}
+                value={step.object ?? ''}
+                onChange={(e) => props.onChange({ object: e.target.value || null })}
+              />
+            </Field>
+          )}
           <Field
             label="How the step is confirmed"
             hint={cameraAllowed ? undefined : 'Private room: camera checks are not allowed.'}

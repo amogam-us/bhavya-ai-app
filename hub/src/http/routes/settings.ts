@@ -30,6 +30,8 @@ export function settingsRoutes(app: FastifyInstance, ctx: AppContext): void {
   app.put('/api/settings/profile', async (req) => {
     const profile = parseOrThrow(childProfileSchema, req.body);
     settings.saveProfile(profile);
+    // Settings such as glasses suggestions change what the child app shows.
+    ctx.engine.refresh();
     return profile;
   });
 
@@ -41,6 +43,7 @@ export function settingsRoutes(app: FastifyInstance, ctx: AppContext): void {
       throw HttpError.conflict(`Rooms used by routines cannot be removed: ${missing.join(', ')}.`);
     }
     settings.saveZones(zones);
+    ctx.engine.refresh();
     return zones;
   });
 

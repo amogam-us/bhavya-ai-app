@@ -10,7 +10,9 @@ import type {
   MissionInput,
   Notification,
   ProgressResponse,
+  SceneScanResponse,
   TranscribeResponse,
+  VoiceRequestResponse,
   Zone,
 } from '@bhavya/shared';
 
@@ -105,6 +107,9 @@ export const api = {
     request<FindObjectResponse>('POST', '/api/vision/find', { object, image }),
   transcribe: (audio: string) =>
     request<TranscribeResponse>('POST', '/api/voice/transcribe', { audio }),
+  voiceRequest: (audio: string) =>
+    request<VoiceRequestResponse>('POST', '/api/voice/request', { audio }),
+  scan: (image: string) => request<SceneScanResponse>('POST', '/api/scan', { image }),
 };
 
 export function errorMessage(error: unknown): string {

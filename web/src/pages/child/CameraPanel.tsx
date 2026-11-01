@@ -1,4 +1,4 @@
-import type { ObjectBox, RunView } from '@bhavya/shared';
+import { FEATURES, type ObjectBox, type RunView } from '@bhavya/shared';
 import { useCallback, useEffect, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { api, ApiError } from '../../lib/api';
@@ -114,7 +114,7 @@ export function CameraPanel({ run, onHint }: CameraPanelProps) {
           {status === 'on' && (note ?? 'Camera is helping with this step')}
           {status === 'error' && camera.error}
         </span>
-        {object && status === 'on' && (
+        {FEATURES.objectFinder && object && status === 'on' && (
           <button
             type="button"
             className="child-btn"
