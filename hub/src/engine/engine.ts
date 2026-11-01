@@ -16,8 +16,6 @@ import {
   type Step,
   type SuggestionReason,
   type SuggestionView,
-  type TraceEntry,
-  type TraceKind,
   type VoiceAction,
   type Zone,
 } from '@bhavya/shared';
@@ -44,9 +42,7 @@ export const DECLINE_COOLDOWN_MS = 15 * 60_000;
 /** Camera and voice suggestions disappear if not answered in this time. */
 export const SUGGESTION_TIMEOUT_MS = 60_000;
 export const MAX_CAMERA_SUGGESTIONS_PER_HOUR = 4;
-/** Brain-log lines kept for a simulator that connects later. */
-const MAX_TRACES = 150;
-/** The same brain-log line is not repeated within this time. */
+/** The same trace line is not repeated within this time. */
 const TRACE_REPEAT_MS = 60_000;
 
 const NOT_UNDERSTOOD = "Sorry, I didn't understand. Try again, or use the pictures.";
@@ -59,6 +55,16 @@ export class EngineError extends Error {
 
 export type StepConfirmation = 'tap' | 'vision' | 'zone' | 'voice';
 type EndReason = 'stopped' | 'left_room' | 'assistant_off' | 'not_resumed' | 'replaced';
+
+/** Who or what a trace line is about. */
+export type TraceKind = 'sensor' | 'privacy' | 'home' | 'engine' | 'muse' | 'child' | 'parent';
+
+/** One line explaining what the hub noticed or decided. */
+export interface TraceEntry {
+  kind: TraceKind;
+  message: string;
+  at: string;
+}
 
 /** What Muse understood from the child's words. The engine decides what to do with it. */
 export interface VoiceIntent {
@@ -147,7 +153,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   private lastSceneMissionId: string | null = null;
   private cameraSuggestionTimes: number[] = [];
   private readonly declinedUntil = new Map<string, number>();
-  private readonly traces: TraceEntry[] = [];
+  private lastTrace: TraceEntry | null = null;
 
   constructor(options: EngineOptions) {
     super();
@@ -221,25 +227,20 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     this.emitState();
   }
 
-  /** Recent brain-log lines, newest first. */
-  recentTraces(): TraceEntry[] {
-    return [...this.traces].reverse();
-  }
-
   /**
-   * Adds a line to the simulator's brain log: what a sensor reported, what Muse
-   * answered, or what the engine decided. It never changes behaviour.
+   * Explains what a sensor reported, what Muse answered or what the engine
+   * decided, as a 'trace' event (the hub writes it to its debug log). It never
+   * changes behaviour.
    */
   trace(kind: TraceKind, message: string): void {
-    const last = this.traces.at(-1);
+    const last = this.lastTrace;
     const repeated =
       last?.kind === kind &&
       last.message === message &&
       this.now() - Date.parse(last.at) < TRACE_REPEAT_MS;
     if (repeated) return;
-    const entry: TraceEntry = { id: this.makeId(), kind, message, at: this.iso() };
-    this.traces.push(entry);
-    if (this.traces.length > MAX_TRACES) this.traces.shift();
+    const entry: TraceEntry = { kind, message, at: this.iso() };
+    this.lastTrace = entry;
     this.emit('trace', entry);
   }
 

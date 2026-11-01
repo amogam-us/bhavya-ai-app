@@ -5,7 +5,6 @@ import {
   type HomeState,
   type Notification,
   type ServerMessage,
-  type TraceEntry,
 } from '@bhavya/shared';
 import type { FastifyInstance } from 'fastify';
 import type { WebSocket } from 'ws';
@@ -54,10 +53,8 @@ export function websocketRoutes(app: FastifyInstance, ctx: AppContext): void {
   const onState = (state: HomeState) => broadcast({ type: 'state', state });
   const onNotification = (notification: Notification) =>
     broadcast({ type: 'notification', notification }, ['parent']);
-  const onTrace = (entry: TraceEntry) => broadcast({ type: 'trace', entry }, ['simulator']);
   engine.on('state', onState);
   engine.on('notification', onNotification);
-  engine.on('trace', onTrace);
 
   const heartbeat = setInterval(() => {
     for (const [socket, client] of clients) {
@@ -75,7 +72,6 @@ export function websocketRoutes(app: FastifyInstance, ctx: AppContext): void {
     clearInterval(heartbeat);
     engine.off('state', onState);
     engine.off('notification', onNotification);
-    engine.off('trace', onTrace);
     for (const socket of clients.keys()) socket.close(1001, 'Hub shutting down');
     clients.clear();
   });
@@ -105,9 +101,6 @@ export function websocketRoutes(app: FastifyInstance, ctx: AppContext): void {
       send(socket, { type: 'state', state: engine.getState() });
       if (message.role === 'parent') {
         send(socket, { type: 'notifications', items: repos.notifications.recent(30) });
-      }
-      if (message.role === 'simulator') {
-        send(socket, { type: 'traces', items: engine.recentTraces() });
       }
       return;
     }

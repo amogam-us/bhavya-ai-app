@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Icon, type IconName } from '../components/Icon';
+import { api } from '../lib/api';
+import { useLoader } from '../lib/useLoader';
 
 const APPS: { to: string; icon: IconName; title: string; text: string }[] = [
   {
@@ -23,6 +25,11 @@ const APPS: { to: string; icon: IconName; title: string; text: string }[] = [
 ];
 
 export function HomePage() {
+  const options = useLoader(() => api.options(), []);
+  // Hidden until the hub answers, so a hidden link never flashes; shown if the hub cannot say.
+  const showSimulator = options.data ? options.data.simulator.visible : !!options.error;
+  const apps = APPS.filter((app) => app.to !== '/simulator' || showSimulator);
+
   return (
     <main className="landing">
       <span className="brand">
@@ -35,7 +42,7 @@ export function HomePage() {
         in private rooms. Built on Meta Muse models.
       </p>
       <div className="tiles">
-        {APPS.map((app) => (
+        {apps.map((app) => (
           <Link key={app.to} to={app.to} className="tile">
             <span className="tile-icon">
               <Icon name={app.icon} size={24} />

@@ -61,10 +61,17 @@ smart lights:
   walking out of the front door means the hub no longer knows where the child is.
 - Click a lamp, or open **Lights**, to switch a smart light.
 - The glasses show a green light and a faint view cone only while the camera is allowed.
-- **Bhavya's brain** opens a log of what the hub noticed and decided, including what Muse
-  answered (kept in memory only, sent only to the simulator).
-- **Simple view** shows the original button-based simulator; it is also used when the browser
-  cannot draw 3D. **Fast** turns off ambient occlusion for slower laptops.
+- Graphics quality is chosen automatically; slower laptops get a lighter mode. Browsers that
+  cannot draw 3D get the original button-based simulator instead.
+- To follow the hub's decisions step by step (sensors, privacy, Muse answers, engine), start the
+  hub with `LOG_LEVEL=debug`.
+
+Two options in `.env` (restart the hub after changing them):
+
+| Option | Values | What it does |
+|---|---|---|
+| `SIMULATOR` | `show` (default), `hide` | `hide` removes the simulator's link from the home page; `/simulator` still works. |
+| `SIMULATOR_VIEW` | `both` (default), `3d`, `simple` | `both`: 3D with a **Simple view** button. `3d`: 3D only. `simple`: the button-based simulator only. |
 
 Rooms are matched to hub rooms by id (`restroom`, `bedroom`, `living_room`, `kitchen`), so names,
 privacy and lights follow the parent's settings.

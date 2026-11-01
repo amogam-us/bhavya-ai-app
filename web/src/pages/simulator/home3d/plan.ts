@@ -88,7 +88,7 @@ export const FRONT_DOOR = {
   outside: [-0.9, 7.2] as Point,
   sensor: [-1.58, 1.08, 6] as const,
 };
-export const OUTSIDE_SPOT: Point = [-0.9, 7.8];
+export const OUTSIDE_SPOT: Point = [-0.9, 7.5];
 
 /** The child can walk in the garden around the house, but no further. */
 export const WORLD: Rect = { x1: -11, x2: 11, z1: -8.5, z2: 10 };

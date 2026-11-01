@@ -464,8 +464,8 @@ describe('MissionEngine', () => {
     });
   });
 
-  describe('brain log', () => {
-    it('explains what happened, newest first, without repeating itself', () => {
+  describe('trace lines', () => {
+    it('explains what happened without repeating itself', () => {
       const lines: string[] = [];
       h.engine.on('trace', (entry) => lines.push(`${entry.kind}: ${entry.message}`));
       h.engine.enterZone('restroom');
@@ -477,9 +477,6 @@ describe('MissionEngine', () => {
           'home: Restroom light on',
         ]),
       );
-      expect(h.engine.recentTraces()[0]?.message).toBe(
-        lines.at(-1)?.split(': ').slice(1).join(': '),
-      );
 
       const count = lines.length;
       h.engine.trace('engine', 'Same line');
@@ -487,7 +484,7 @@ describe('MissionEngine', () => {
       expect(lines.length).toBe(count + 1);
     });
 
-    it('copies parent notifications into the log', () => {
+    it('includes parent notifications', () => {
       const lines: string[] = [];
       h.engine.on('trace', (entry) => lines.push(`${entry.kind}: ${entry.message}`));
       h.engine.requestHelp(null);

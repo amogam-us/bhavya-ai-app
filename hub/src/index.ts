@@ -29,6 +29,8 @@ async function main(): Promise<void> {
     app.log,
   );
   const engine = new MissionEngine({ repos });
+  // What the hub noticed and decided, step by step. Shown with LOG_LEVEL=debug.
+  engine.on('trace', (entry) => app.log.debug(`[${entry.kind}] ${entry.message}`));
   const missions = new MissionService({ repos, muse, cardsDir: config.cardsDir });
 
   await registerRoutes(app, { config, repos, engine, missions, muse });

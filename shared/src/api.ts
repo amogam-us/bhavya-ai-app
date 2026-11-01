@@ -88,6 +88,21 @@ export interface SceneScanResponse {
   outcome: ScanOutcome;
 }
 
+/**
+ * Which home simulator views to offer (hub .env SIMULATOR_VIEW): 3D with a
+ * button for the simple view, 3D only, or the simple view only.
+ */
+export type SimulatorView = 'both' | '3d' | 'simple';
+
+/** Hub options from its .env that the web app needs. */
+export interface AppOptions {
+  simulator: {
+    /** False hides the simulator's link on the home page; the page itself still works. */
+    visible: boolean;
+    view: SimulatorView;
+  };
+}
+
 export const uploadCardSchema = z.object({ image: imageDataUrlSchema });
 
 export interface DraftResponse {
