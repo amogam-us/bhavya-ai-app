@@ -2,7 +2,7 @@ import { MAX_DEMO_FRAMES } from '@bhavya/shared';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '../../components/Icon';
-import { Button, Card, ErrorNotice, Field, Notice, PageHeader, Spinner } from '../../components/ui';
+import { Button, ErrorNotice, Field, Notice, PageHeader, Spinner } from '../../components/ui';
 import { api, ApiError, errorMessage } from '../../lib/api';
 import { demoFrames } from '../../lib/demoFrames';
 import { extractVideoFrames } from '../../lib/media';
@@ -138,8 +138,8 @@ export function NewMissionPage() {
       <ErrorNotice error={settings.error} />
 
       {zone && (
-        <form className="stack" onSubmit={(e) => void submit(e)}>
-          <Card className="stack">
+        <div className="new-routine">
+          <form className="card stack new-routine-form" onSubmit={(e) => void submit(e)}>
             <div className="grid-2">
               <Field label="Room">
                 <select value={zone.id} onChange={(e) => setZoneId(e.target.value)}>
@@ -184,69 +184,105 @@ export function NewMissionPage() {
                 is ever used there.
               </Notice>
             )}
-          </Card>
 
-          {activeMode === 'text' ? (
-            <Card className="stack">
-              <h2>Describe the routine</h2>
-              <Field
-                label="Steps in your own words"
-                hint="Mention the objects your child uses and anything that often goes wrong."
+            {activeMode === 'text' ? (
+              <>
+                <h2>Describe the routine</h2>
+                <Field
+                  label="Steps in your own words"
+                  hint="Mention the objects your child uses and anything that often goes wrong."
+                >
+                  <textarea
+                    value={instructions}
+                    rows={7}
+                    maxLength={4000}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    placeholder="Take the toothbrush from the blue cup, put a little toothpaste on it, brush top and bottom teeth, spit, rinse the brush and put it back."
+                  />
+                </Field>
+                <div className="row">{recordButton('instructions')}</div>
+              </>
+            ) : (
+              <>
+                <h2>Show the routine</h2>
+                <Field label="Video">
+                  <input
+                    type="file"
+                    accept="video/*"
+                    capture="environment"
+                    onChange={(e) => setVideo(e.target.files?.[0] ?? null)}
+                  />
+                </Field>
+                <Field label="What you said while showing it (optional)">
+                  <textarea
+                    value={narration}
+                    rows={3}
+                    maxLength={4000}
+                    onChange={(e) => setNarration(e.target.value)}
+                    placeholder="First I open the bag on the table, then the pencil case goes in…"
+                  />
+                </Field>
+                <div className="row">{recordButton('narration')}</div>
+              </>
+            )}
+
+            <ErrorNotice error={recorder.error} />
+            <ErrorNotice error={error?.message ?? null} details={error?.details} />
+
+            <div className="new-routine-submit">
+              {busy && <span className="muted">{busy}</span>}
+              <Button
+                type="submit"
+                variant="primary"
+                icon="sparkle"
+                busy={!!busy}
+                disabled={!canSubmit}
               >
-                <textarea
-                  value={instructions}
-                  rows={6}
-                  maxLength={4000}
-                  onChange={(e) => setInstructions(e.target.value)}
-                  placeholder="Take the toothbrush from the blue cup, put a little toothpaste on it, brush top and bottom teeth, spit, rinse the brush and put it back."
-                />
-              </Field>
-              <div className="row">{recordButton('instructions')}</div>
-            </Card>
-          ) : (
-            <Card className="stack">
-              <h2>Show the routine</h2>
-              <p className="muted small">
-                Record yourself doing the routine once, slowly, with the glasses or a phone. 30 to
-                90 seconds works best. Muse picks the steps and the objects from the video.
-              </p>
-              <Field label="Video">
-                <input
-                  type="file"
-                  accept="video/*"
-                  capture="environment"
-                  onChange={(e) => setVideo(e.target.files?.[0] ?? null)}
-                />
-              </Field>
-              <Field label="What you said while showing it (optional)">
-                <textarea
-                  value={narration}
-                  rows={3}
-                  maxLength={4000}
-                  onChange={(e) => setNarration(e.target.value)}
-                  placeholder="First I open the bag on the table, then the pencil case goes in…"
-                />
-              </Field>
-              <div className="row">{recordButton('narration')}</div>
-            </Card>
-          )}
+                Create draft with Muse
+              </Button>
+            </div>
+          </form>
 
-          <ErrorNotice error={recorder.error} />
-          <ErrorNotice error={error?.message ?? null} details={error?.details} />
-
-          <div className="row">
-            <Button
-              type="submit"
-              variant="primary"
-              icon="sparkle"
-              busy={!!busy}
-              disabled={!canSubmit}
-            >
-              Create draft with Muse
-            </Button>
-            {busy && <span className="muted">{busy}</span>}
-          </div>
-        </form>
+          <aside className="card new-routine-aside" aria-label="How it works">
+            <h2>How it works</h2>
+            <ol className="how-steps">
+              <li>
+                <div>
+                  <b>Muse drafts the steps</b>
+                  <span>One clear action per step, in your child&apos;s language.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <b>You check each step</b>
+                  <span>Change the words, the hints, pictures and how each step is confirmed.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <b>You approve it</b>
+                  <span>Only then does your child see the routine.</span>
+                </div>
+              </li>
+            </ol>
+            <div className="tip-box">
+              <b>{activeMode === 'text' ? 'Tips for writing' : 'Tips for the video'}</b>
+              {activeMode === 'text' ? (
+                <ul>
+                  <li>Use your child&apos;s own things: &ldquo;the cup with the star&rdquo;.</li>
+                  <li>Say where things are: &ldquo;on the low shelf&rdquo;.</li>
+                  <li>Mention what often goes wrong.</li>
+                </ul>
+              ) : (
+                <ul>
+                  <li>Do the routine once, slowly: 30 to 90 seconds works best.</li>
+                  <li>Use the glasses or a phone, and keep the objects in view.</li>
+                  <li>Say each step out loud while you do it.</li>
+                </ul>
+              )}
+            </div>
+          </aside>
+        </div>
       )}
     </>
   );
