@@ -1,5 +1,6 @@
 import type { Mission, Zone } from '@bhavya/shared';
 import { Link, useNavigate } from 'react-router-dom';
+import { Icon } from '../../components/Icon';
 import { Badge, Button, Card, ErrorNotice, PageHeader, Spinner } from '../../components/ui';
 import { api } from '../../lib/api';
 import { useLoader } from '../../lib/useLoader';
@@ -38,36 +39,42 @@ export function MissionsPage() {
       <div className="mission-list">
         {missions.data?.map((mission) => {
           const zone = zones.find((z) => z.id === mission.zone);
-          const cards = mission.steps.filter((s) => s.card).slice(0, 8);
+          const cards = mission.steps.filter((s) => s.card);
+          const cover = cards[0]?.card ?? null;
           return (
             <Link
               key={mission.id}
               to={`/parent/missions/${mission.id}`}
-              className="card mission-row"
+              className="card mission-card"
             >
-              <div>
-                <div className="row">
-                  <h2>{mission.title}</h2>
-                  {mission.status === 'approved' ? (
-                    <Badge tone="success">Approved</Badge>
-                  ) : (
-                    <Badge tone="warn">Draft, needs review</Badge>
-                  )}
-                  {zone?.type === 'private' && <Badge tone="info">Private room, camera off</Badge>}
+              <div className="mission-card-top">
+                <div className="mission-cover">
+                  {cover ? <img src={cover} alt="" /> : <Icon name="list" size={22} />}
                 </div>
-                <p className="muted small" style={{ marginTop: 4 }}>
-                  {zone?.name ?? mission.zone} · {mission.steps.length} steps ·{' '}
-                  {triggerLabel(mission, zones)}
-                </p>
-                {cards.length > 0 && (
-                  <div className="thumbs">
-                    {cards.map((s) => (
-                      <img key={s.id} className="thumb" src={s.card ?? ''} alt={s.action} />
-                    ))}
+                <div>
+                  <h2>{mission.title}</h2>
+                  <div className="row" style={{ gap: 6 }}>
+                    {mission.status === 'approved' ? (
+                      <Badge tone="success">Approved</Badge>
+                    ) : (
+                      <Badge tone="warn">Draft, needs review</Badge>
+                    )}
+                    {zone?.type === 'private' && <Badge tone="info">Private, camera off</Badge>}
                   </div>
-                )}
+                </div>
               </div>
-              <span className="btn btn-secondary btn-sm">Open</span>
+              <p className="muted small">
+                {zone?.name ?? mission.zone} · {mission.steps.length} steps ·{' '}
+                {triggerLabel(mission, zones)}
+              </p>
+              {cards.length > 1 && (
+                <div className="thumbs">
+                  {cards.slice(1, 8).map((s) => (
+                    <img key={s.id} className="thumb" src={s.card ?? ''} alt={s.action} />
+                  ))}
+                </div>
+              )}
+              <span className="mission-open">Open routine →</span>
             </Link>
           );
         })}

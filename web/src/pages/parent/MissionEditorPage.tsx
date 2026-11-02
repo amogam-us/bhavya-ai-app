@@ -1,21 +1,15 @@
 import type { Mission, MissionInput, MissionSource, Step, Zone } from '@bhavya/shared';
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import {
-  Badge,
-  Button,
-  Card,
-  ErrorNotice,
-  Field,
-  Notice,
-  PageHeader,
-  Spinner,
-} from '../../components/ui';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Icon } from '../../components/Icon';
+import { Badge, Button, ErrorNotice, Field, Notice, Spinner } from '../../components/ui';
 import { api, ApiError, errorMessage } from '../../lib/api';
 import { demoFrames } from '../../lib/demoFrames';
 import { cropImage, readFileAsDataUrl } from '../../lib/media';
 import { useLoader } from '../../lib/useLoader';
-import { StepEditor } from './StepEditor';
+import { StepEditor, type StepTab } from './StepEditor';
+import { StepFlow } from './StepFlow';
+import { StepList } from './StepList';
 
 const LIGHT_OFF_DELAY_SEC = 120;
 const FULL_IMAGE = { x: 0, y: 0, width: 1, height: 1, confidence: 1 };
@@ -93,6 +87,9 @@ export function MissionEditorPage() {
   const [cardBusy, setCardBusy] = useState<Set<string>>(new Set());
   const [error, setError] = useState<UiError | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [tab, setTab] = useState<StepTab>('say');
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (!loader.data) return;
@@ -113,6 +110,12 @@ export function MissionEditorPage() {
   }
 
   const zone = zones.find((z) => z.id === form.zone);
+  const selectedIndex = Math.max(
+    0,
+    form.steps.findIndex((s) => s.id === selectedId),
+  );
+  const selectedStep = form.steps[selectedIndex];
+  const cover = form.steps.find((s) => s.card)?.card ?? null;
   const cameraAllowed = zone?.type === 'camera_ok';
   const savedStepIds = new Set(saved.steps.map((s) => s.id));
   const hasLightOn = form.onStart.some((a) => a.type === 'light_on');
@@ -135,10 +138,21 @@ export function MissionEditorPage() {
       [steps[index], steps[target]] = [steps[target]!, steps[index]!];
       return { ...f, steps };
     });
-  const removeStep = (index: number) =>
+  const removeStep = (index: number) => {
+    if (form.steps.length <= 1) return;
+    // Keep a neighbouring step selected.
+    const neighbour = form.steps[index + 1] ?? form.steps[index - 1];
+    setSelectedId(neighbour?.id ?? null);
     setForm((f) =>
       f && f.steps.length > 1 ? { ...f, steps: f.steps.filter((_, i) => i !== index) } : f,
     );
+  };
+  const addStep = () => {
+    const step = newStep();
+    setForm((f) => (f ? { ...f, steps: [...f.steps, step] } : f));
+    setSelectedId(step.id);
+    setTab('say');
+  };
 
   /** Accepts a mission from the hub after a card change, without losing unsaved edits. */
   const applyCard = (mission: Mission, stepId: string) => {
@@ -256,39 +270,101 @@ export function MissionEditorPage() {
   };
 
   const missingCards = saved.steps.filter((s) => !s.card).length;
+  const statusBadge =
+    saved.status === 'approved' && !dirty ? (
+      <Badge tone="success">Approved</Badge>
+    ) : (
+      <Badge tone="warn">Needs your approval</Badge>
+    );
+  const lights = [hasLightOn && 'light on at start', hasLightOff && 'off after leaving']
+    .filter(Boolean)
+    .join(', ');
 
   return (
-    <>
-      <PageHeader
-        title={saved.title}
-        subtitle={
-          <span className="row">
-            {saved.status === 'approved' && !dirty ? (
-              <Badge tone="success">Approved</Badge>
-            ) : (
-              <Badge tone="warn">Needs your approval</Badge>
-            )}
-            <span>Created from {SOURCE_LABELS[saved.source]}</span>
-          </span>
-        }
-        actions={
-          <Button variant="danger" icon="trash" onClick={onDelete} disabled={!!busy}>
-            Delete
-          </Button>
-        }
-      />
-
-      <div className="stack">
-        <Card className="stack">
-          <div className="grid-2">
-            <Field label="Name">
+    <div className="mission-editor">
+      <header className="editor-header">
+        <div className="editor-title-row">
+          <Link
+            to="/parent"
+            className="btn btn-ghost btn-sm"
+            aria-label="All routines"
+            title="All routines"
+          >
+            <Icon name="back" size={18} />
+          </Link>
+          <div className="editor-cover">
+            {cover ? <img src={cover} alt="" /> : <Icon name="list" size={20} />}
+          </div>
+          <div className="editor-title">
+            <label className="title-edit">
               <input
                 type="text"
+                aria-label="Routine name"
                 value={form.title}
                 maxLength={60}
                 onChange={(e) => update({ title: e.target.value })}
               />
-            </Field>
+              <Icon name="edit" size={15} />
+            </label>
+            <div className="editor-meta">
+              {statusBadge}
+              <span className="chip">
+                <Icon name="home" size={14} />
+                {zone?.name ?? form.zone}
+                {zone?.type === 'private' && ' · private'}
+              </span>
+              <span className="chip">
+                <Icon name="play" size={14} />
+                {form.trigger === 'zone_enter' ? 'Starts when entering' : 'Child starts it'}
+              </span>
+              {zone?.light && lights && (
+                <span className="chip">
+                  <Icon name="light" size={14} />
+                  {lights}
+                </span>
+              )}
+              <button
+                type="button"
+                className={`chip chip-button ${settingsOpen ? 'is-open' : ''}`}
+                aria-expanded={settingsOpen}
+                onClick={() => setSettingsOpen((open) => !open)}
+              >
+                <Icon name="settings" size={14} />
+                Routine settings
+              </button>
+              <span className="muted small">From {SOURCE_LABELS[saved.source]}</span>
+            </div>
+          </div>
+          <div className="editor-actions">
+            {busy ? (
+              <Spinner label={busy} />
+            ) : (
+              dirty && <span className="unsaved">Unsaved changes</span>
+            )}
+            <Button
+              variant="ghost"
+              icon="trash"
+              aria-label="Delete routine"
+              title="Delete routine"
+              onClick={onDelete}
+              disabled={!!busy}
+            />
+            <Button onClick={() => void onSave()} disabled={!dirty || !!busy}>
+              Save
+            </Button>
+            <Button
+              variant="primary"
+              icon="check"
+              onClick={() => void onApprove()}
+              disabled={!!busy || (saved.status === 'approved' && !dirty)}
+            >
+              {dirty ? 'Save and approve' : 'Approve'}
+            </Button>
+          </div>
+        </div>
+
+        {settingsOpen && (
+          <div className="editor-settings">
             <Field label="Room">
               <select
                 value={form.zone}
@@ -335,76 +411,65 @@ export function MissionEditorPage() {
                 </label>
               </div>
             ) : (
-              <p className="muted small">This room has no smart light.</p>
+              <p className="muted small" style={{ alignSelf: 'center' }}>
+                This room has no smart light.
+              </p>
+            )}
+            {!cameraAllowed && (
+              <div className="wide">
+                <Notice tone="info">
+                  Private room: the camera is switched off here, so every step is confirmed by your
+                  child tapping Done. Door locks are never automated.
+                </Notice>
+              </div>
             )}
           </div>
-          {!cameraAllowed && (
-            <Notice tone="info">
-              Private room: the camera is switched off here, so every step is confirmed by your
-              child tapping Done. Door locks are never automated.
-            </Notice>
-          )}
-        </Card>
+        )}
+      </header>
 
-        {form.steps.map((step, index) => (
-          <StepEditor
-            key={step.id}
-            step={step}
-            index={index}
-            count={form.steps.length}
-            cameraAllowed={cameraAllowed}
-            saved={savedStepIds.has(step.id)}
-            cardBusy={cardBusy.has(step.id)}
-            hasDemoFrame={!!demoFrames.frameFor(id, step.id)}
-            onChange={(patch) => updateStep(index, patch)}
-            onMove={(direction) => moveStep(index, direction)}
-            onRemove={() => removeStep(index)}
-            onMakeCard={() => void makeCard(step.id)}
-            onCardFromDemo={() => void cardFromDemo(step)}
-            onUploadCard={(file) => void uploadCard(step.id, file)}
-          />
-        ))}
-
-        <div>
-          <Button
-            icon="plus"
-            disabled={form.steps.length >= 20}
-            onClick={() => setForm((f) => (f ? { ...f, steps: [...f.steps, newStep()] } : f))}
-          >
-            Add step
-          </Button>
+      {(error || message) && (
+        <div className="editor-notices">
+          <ErrorNotice error={error?.message ?? null} details={error?.details} />
+          {message && <Notice tone="success">{message}</Notice>}
         </div>
+      )}
 
-        <ErrorNotice error={error?.message ?? null} details={error?.details} />
-        {message && <Notice tone="success">{message}</Notice>}
-      </div>
-
-      <div className="save-bar">
-        <Button variant="secondary" onClick={() => void onSave()} disabled={!dirty || !!busy}>
-          Save changes
-        </Button>
-        <Button
-          variant="primary"
-          icon="check"
-          onClick={() => void onApprove()}
-          disabled={!!busy || (saved.status === 'approved' && !dirty)}
-        >
-          {dirty ? 'Save and approve' : 'Approve'}
-        </Button>
-        <Button
-          icon="sparkle"
-          onClick={() => void onMakeAll()}
-          disabled={!!busy || missingCards === 0}
-        >
-          {missingCards > 0 ? `Make ${missingCards} missing pictures` : 'All steps have pictures'}
-        </Button>
-        <span className="spacer" />
-        {busy ? (
-          <Spinner label={busy} />
-        ) : (
-          dirty && <span className="muted small">Unsaved changes. Edits need approval again.</span>
+      <div className="editor-grid">
+        <StepList
+          steps={form.steps}
+          selectedId={selectedStep?.id ?? ''}
+          onSelect={setSelectedId}
+          onAdd={addStep}
+          canAdd={form.steps.length < 20}
+          missingCards={missingCards}
+          onMakeAll={() => void onMakeAll()}
+          busy={!!busy}
+        />
+        {selectedStep && (
+          <>
+            <StepEditor
+              key={selectedStep.id}
+              step={selectedStep}
+              index={selectedIndex}
+              count={form.steps.length}
+              cameraAllowed={cameraAllowed}
+              saved={savedStepIds.has(selectedStep.id)}
+              cardBusy={cardBusy.has(selectedStep.id)}
+              hasDemoFrame={!!demoFrames.frameFor(id, selectedStep.id)}
+              tab={tab}
+              onTab={setTab}
+              onSelectIndex={(i) => setSelectedId(form.steps[i]?.id ?? null)}
+              onChange={(patch) => updateStep(selectedIndex, patch)}
+              onMove={(direction) => moveStep(selectedIndex, direction)}
+              onRemove={() => removeStep(selectedIndex)}
+              onMakeCard={() => void makeCard(selectedStep.id)}
+              onCardFromDemo={() => void cardFromDemo(selectedStep)}
+              onUploadCard={(file) => void uploadCard(selectedStep.id, file)}
+            />
+            <StepFlow step={selectedStep} index={selectedIndex} />
+          </>
         )}
       </div>
-    </>
+    </div>
   );
 }
