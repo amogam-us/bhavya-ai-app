@@ -17,4 +17,5 @@ export const DEFAULT_PROFILE: ChildProfile = {
   showText: true,
   calming: { breathing: true, music: true },
   glassesSuggestions: false,
+  calmSupport: { enabled: false, loudSeconds: 10, loudLevel: 75, watchDistress: false },
 };

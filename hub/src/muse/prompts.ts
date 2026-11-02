@@ -144,6 +144,24 @@ export function sceneCheckInstructions(params: { routines: Mission[]; zones: Zon
   ].join('\n');
 }
 
+/**
+ * Calm support: a parent asked to be told when their child seems upset, so a
+ * quiet break can be offered. This is the one check that looks at a person, so
+ * it is kept narrow: distress yes or no, never identity, looks or "odd" behaviour.
+ */
+export function distressCheckInstructions(): string {
+  return [
+    'You look at a few frames from a room camera, taken about one second apart, in time order.',
+    'A parent asked to know when their autistic child seems upset or overwhelmed, so a quiet break can be offered.',
+    'Look only for clear signs of distress: crying, screaming, covering ears, hitting themselves or things, curling up, or pacing in an agitated way.',
+    'Harmless repetitive movements such as rocking, hand-flapping, spinning, jumping or humming are NOT distress. Never count them.',
+    'Do not identify anyone, and do not describe faces, bodies or clothing.',
+    'distress: true only when the signs are clear in these frames. If no person is visible, false.',
+    'signs: up to 6 words naming the signs, for example "crying, covering ears", or "" when there are none.',
+    'confidence: between 0 and 1, how sure you are.',
+  ].join('\n');
+}
+
 export function cardPrompt(step: Pick<Step, 'action' | 'object'>): string {
   const subject = step.object ? `${step.action} (showing a ${step.object})` : step.action;
   return (

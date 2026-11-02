@@ -17,6 +17,12 @@ const APPS: { to: string; icon: IconName; title: string; text: string }[] = [
     text: 'Step-by-step guidance with pictures and voice, a communication board, and calm breaks.',
   },
   {
+    to: '/room',
+    icon: 'volume',
+    title: 'Room device',
+    text: 'Calm support: an old phone or laptop in a room notices when your child seems upset and offers a quiet break.',
+  },
+  {
     to: '/simulator',
     icon: 'home',
     title: 'Home simulator',
@@ -28,7 +34,10 @@ export function HomePage() {
   const options = useLoader(() => api.options(), []);
   // Hidden until the hub answers, so a hidden link never flashes; shown if the hub cannot say.
   const showSimulator = options.data ? options.data.simulator.visible : !!options.error;
-  const apps = APPS.filter((app) => app.to !== '/simulator' || showSimulator);
+  const showRoomDevice = options.data?.calmSupport ?? false;
+  const apps = APPS.filter(
+    (app) => (app.to !== '/simulator' || showSimulator) && (app.to !== '/room' || showRoomDevice),
+  );
 
   return (
     <main className="landing">

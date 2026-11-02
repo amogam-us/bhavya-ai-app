@@ -74,10 +74,29 @@ Options in `.env` (restart the hub after changing them):
 | `SIMULATOR_VIEW` | `both` (default), `3d`, `simple` | `both`: 3D with a **Simple view** button. `3d`: 3D only. `simple`: the button-based simulator only. |
 | `GLASSES_SUGGESTIONS` | `on` (default), `off` | `off` turns off finding routines with the glasses camera for the whole hub; the parent setting is hidden. |
 | `PRIVATE_PAUSE_MINUTES` | `10` (default), `1` to `60` | Minutes the glasses stop looking around after seeing a private place. Use `1` for demos. |
+| `CALM_SUPPORT` | `on` (default), `off` | `off` turns off Calm support for the whole hub; its settings, room device page and simulator button are hidden. |
 | `CAMERA_DEBUG` | `off` (default), `on` | For testing: the child app shows what Muse saw in each glasses frame and each step check. |
 
 Rooms are matched to hub rooms by id (`restroom`, `bedroom`, `living_room`, `kitchen`), so names,
 privacy and lights follow the parent's settings.
+
+### Calm support
+
+Off by default; a parent turns it on in **Child & rooms**. An old phone or laptop placed in a room
+where the camera is allowed opens `/room` (the **Room device** tile) and picks its room. While the
+child is in that room it:
+
+- measures loudness on the device (nothing is recorded) and reports it once a second, and
+- if the parent also allows it, sends a burst of 4 photos every 20 seconds, which Muse Spark checks
+  for clear signs of distress (crying, screaming, covering ears, hitting, curling up, agitated
+  pacing). Harmless repetitive movements such as rocking or hand-flapping are never counted.
+
+When it stays very loud for the chosen time, or distress is seen in two looks in a row, the child
+is asked "Do you want a quiet break?" (the break screen with breathing and calm music) and the
+parent gets a notification. During a routine it uses the routine's own break. The child can always
+say "Not now". After an offer there is no new one for 5 minutes, and 10 minutes after "Not now".
+Private rooms are never watched. "I need a break" said with the Talk button also starts a quiet
+break. For demos, the simulator's **Make it loud** button plays a room device hearing shouting.
 
 ### Talking to Bhavya
 

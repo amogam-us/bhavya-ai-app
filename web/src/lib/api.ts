@@ -11,6 +11,7 @@ import type {
   MissionInput,
   Notification,
   ProgressResponse,
+  RoomCheckResponse,
   SceneScanResponse,
   TranscribeResponse,
   VoiceRequestResponse,
@@ -112,6 +113,8 @@ export const api = {
   voiceRequest: (audio: string) =>
     request<VoiceRequestResponse>('POST', '/api/voice/request', { audio }),
   scan: (image: string) => request<SceneScanResponse>('POST', '/api/scan', { image }),
+  roomCheck: (room: string, images: string[]) =>
+    request<RoomCheckResponse>('POST', '/api/room/check', { room, images }),
 };
 
 export function errorMessage(error: unknown): string {

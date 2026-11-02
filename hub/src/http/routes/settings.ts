@@ -33,6 +33,7 @@ export function settingsRoutes(app: FastifyInstance, ctx: AppContext): void {
     simulator: ctx.config.simulator,
     glassesSuggestions: ctx.config.glassesSuggestions,
     privatePauseMinutes: ctx.config.privatePauseMinutes,
+    calmSupport: ctx.config.calmSupport,
     cameraDebug: ctx.config.cameraDebug,
   }));
 

@@ -9,6 +9,7 @@ import { NewMissionPage } from './pages/parent/NewMissionPage';
 import { ParentLayout } from './pages/parent/ParentLayout';
 import { ProgressPage } from './pages/parent/ProgressPage';
 import { SettingsPage } from './pages/parent/SettingsPage';
+import { RoomPage } from './pages/room/RoomPage';
 
 // The simulator brings in the 3D engine, so it loads only when opened.
 const SimulatorPage = lazy(() =>
@@ -27,6 +28,7 @@ export function App() {
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="/child" element={<ChildApp />} />
+      <Route path="/room" element={<RoomPage />} />
       <Route
         path="/simulator"
         element={

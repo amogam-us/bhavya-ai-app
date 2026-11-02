@@ -107,6 +107,21 @@ export const childProfileSchema = z.object({
    * Off unless a parent turns it on. Defaults keep older saved profiles valid.
    */
   glassesSuggestions: z.boolean().default(false),
+  /**
+   * Calm support: offer a quiet break when a room device notices the child seems upset.
+   * Off unless a parent turns it on. Defaults keep older saved profiles valid.
+   */
+  calmSupport: z
+    .object({
+      enabled: z.boolean(),
+      /** How many seconds of very loud sound before a quiet break is offered. */
+      loudSeconds: z.number().int().min(3).max(60),
+      /** Loudness (0 to 100) that counts as very loud. */
+      loudLevel: z.number().int().min(40).max(95),
+      /** Also let the room camera look for signs of distress. */
+      watchDistress: z.boolean(),
+    })
+    .default({ enabled: false, loudSeconds: 10, loudLevel: 75, watchDistress: false }),
 });
 export type ChildProfile = z.infer<typeof childProfileSchema>;
 
