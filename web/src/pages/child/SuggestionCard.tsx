@@ -13,7 +13,12 @@ interface SuggestionCardProps {
 /** A yes/no question from the hub. Nothing starts until the child says yes. */
 export function SuggestionCard({ suggestion, send, onSpeak }: SuggestionCardProps) {
   const { id, missionId, prompt } = suggestion;
-  const mission = useLoader(() => api.mission(missionId), [missionId]);
+  // A quiet break (Calm support) has no routine behind it.
+  const calm = suggestion.reason === 'calm';
+  const mission = useLoader(
+    () => (calm ? Promise.resolve(null) : api.mission(missionId)),
+    [missionId, calm],
+  );
   const picture = mission.data?.steps.find((s) => s.card)?.card ?? null;
   const [answered, setAnswered] = useState(false);
 
@@ -31,8 +36,10 @@ export function SuggestionCard({ suggestion, send, onSpeak }: SuggestionCardProp
 
   return (
     <article className="step-card" aria-live="polite">
-      <div className="step-picture">
-        {picture ? (
+      <div className={`step-picture ${calm ? 'calm-picture' : ''}`}>
+        {calm ? (
+          <span className="calm-dot" aria-hidden="true" />
+        ) : picture ? (
           <img src={picture} alt="" />
         ) : (
           <span className="placeholder">{suggestion.missionTitle}</span>
@@ -47,7 +54,7 @@ export function SuggestionCard({ suggestion, send, onSpeak }: SuggestionCardProp
           disabled={answered}
         >
           <Icon name="check" size={34} />
-          Yes
+          {calm ? 'Yes, a break' : 'Yes'}
         </button>
         <button
           type="button"

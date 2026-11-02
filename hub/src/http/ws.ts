@@ -15,19 +15,22 @@ const HEARTBEAT_MS = 30_000;
 
 type CommandMessage = Exclude<ClientMessage, { type: 'hello' }>;
 
-/** Which client role may send each command. */
-const ALLOWED_ROLE: Record<CommandMessage['type'], ClientRole> = {
-  start_mission: 'child',
-  step_done: 'child',
-  help: 'child',
-  stop: 'child',
-  break: 'child',
-  set_assistant: 'child',
-  board_say: 'child',
-  suggestion_answer: 'child',
-  zone_enter: 'simulator',
-  zone_leave: 'simulator',
-  set_light: 'simulator',
+/** Which client roles may send each command. */
+const ALLOWED_ROLES: Record<CommandMessage['type'], readonly ClientRole[]> = {
+  start_mission: ['child'],
+  step_done: ['child'],
+  help: ['child'],
+  stop: ['child'],
+  break: ['child'],
+  set_assistant: ['child'],
+  board_say: ['child'],
+  suggestion_answer: ['child'],
+  calm_end: ['child'],
+  // The simulator can play a room device, for demos.
+  room_sound: ['room', 'simulator'],
+  zone_enter: ['simulator'],
+  zone_leave: ['simulator'],
+  set_light: ['simulator'],
 };
 
 interface Client {
@@ -105,7 +108,7 @@ export function websocketRoutes(app: FastifyInstance, ctx: AppContext): void {
       return;
     }
 
-    if (client.role !== ALLOWED_ROLE[message.type]) {
+    if (!client.role || !ALLOWED_ROLES[message.type].includes(client.role)) {
       send(socket, { type: 'error', message: 'This device cannot do that.' });
       return;
     }
@@ -141,6 +144,10 @@ export function websocketRoutes(app: FastifyInstance, ctx: AppContext): void {
         return engine.boardSay(message.phraseId);
       case 'suggestion_answer':
         return engine.answerSuggestion(message.suggestionId, message.accept);
+      case 'calm_end':
+        return engine.endCalmBreak();
+      case 'room_sound':
+        return engine.applyRoomSound(message.room, message.level);
       case 'zone_enter':
         return engine.enterZone(message.zone);
       case 'zone_leave':

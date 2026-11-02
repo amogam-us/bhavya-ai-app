@@ -70,12 +70,13 @@ export function ChildApp() {
         <div className="child-gate">
           <Spinner label="Connecting to home…" />
         </div>
-      ) : home.state.run?.onBreak ? (
+      ) : home.state.run?.onBreak || home.state.calmBreak ? (
         <BreakScreen
           profile={profile}
           onReady={() => {
             const runId = home.state?.run?.runId;
             if (runId) home.send({ type: 'break', runId, onBreak: false });
+            else home.send({ type: 'calm_end' });
           }}
         />
       ) : (

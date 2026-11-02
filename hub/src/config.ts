@@ -31,6 +31,8 @@ const envSchema = z.object({
   GLASSES_SUGGESTIONS: word.pipe(z.enum(['on', 'off'])).default('on'),
   // Minutes the glasses stop looking around after seeing a private place (1 to 60).
   PRIVATE_PAUSE_MINUTES: z.coerce.number().int().min(1).max(60).default(10),
+  // "off" turns off Calm support (quiet break offers from room devices) for the whole hub.
+  CALM_SUPPORT: word.pipe(z.enum(['on', 'off'])).default('on'),
   // "on" shows in the child app what Muse saw in each camera frame (for testing only).
   CAMERA_DEBUG: word.pipe(z.enum(['on', 'off'])).default('off'),
 });
@@ -49,6 +51,7 @@ export interface AppConfig {
   simulator: AppOptions['simulator'];
   glassesSuggestions: boolean;
   privatePauseMinutes: number;
+  calmSupport: boolean;
   cameraDebug: boolean;
 }
 
@@ -74,6 +77,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     simulator: { visible: e.SIMULATOR === 'show', view: e.SIMULATOR_VIEW },
     glassesSuggestions: e.GLASSES_SUGGESTIONS === 'on',
     privatePauseMinutes: e.PRIVATE_PAUSE_MINUTES,
+    calmSupport: e.CALM_SUPPORT === 'on',
     cameraDebug: e.CAMERA_DEBUG === 'on',
   };
 }

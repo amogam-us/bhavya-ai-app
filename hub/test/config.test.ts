@@ -12,6 +12,8 @@ describe('loadConfig', () => {
     expect(loadConfig(env()).cameraDebug).toBe(false);
     expect(loadConfig(env()).glassesSuggestions).toBe(true);
     expect(loadConfig(env()).privatePauseMinutes).toBe(10);
+    expect(loadConfig(env()).calmSupport).toBe(true);
+    expect(loadConfig(env({ CALM_SUPPORT: 'off' })).calmSupport).toBe(false);
     expect(loadConfig(env({ PRIVATE_PAUSE_MINUTES: '1' })).privatePauseMinutes).toBe(1);
     expect(loadConfig(env({ GLASSES_SUGGESTIONS: 'off' })).glassesSuggestions).toBe(false);
     expect(loadConfig(env({ CAMERA_DEBUG: 'ON' })).cameraDebug).toBe(true);

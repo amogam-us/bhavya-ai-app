@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConnectionBadge, ErrorNotice, Notice, Spinner } from '../../components/ui';
 import { api } from '../../lib/api';
@@ -29,6 +29,37 @@ export function SimulatorPage() {
   );
   const [simpleChosen, setSimpleChosen] = useState(false);
   const [lightsOpen, setLightsOpen] = useState(false);
+  const [loudLeft, setLoudLeft] = useState(0);
+  const [loudNote, setLoudNote] = useState<string | null>(null);
+  const supportRoom = state?.support.room ?? null;
+  const { send } = home;
+
+  // "Make it loud" plays a room device hearing shouting, once a second (Calm support demo).
+  useEffect(() => {
+    if (loudLeft <= 0) return;
+    const timer = setTimeout(() => {
+      if (supportRoom) send({ type: 'room_sound', room: supportRoom, level: 95 });
+      setLoudLeft((left) => left - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [loudLeft, supportRoom, send]);
+
+  useEffect(() => {
+    if (!loudNote) return;
+    const timer = setTimeout(() => setLoudNote(null), 6000);
+    return () => clearTimeout(timer);
+  }, [loudNote]);
+
+  const makeLoud = () => {
+    if (!supportRoom) {
+      setLoudNote(
+        'Calm support is not listening here. Turn it on in Child & rooms and walk the child into a camera-OK room.',
+      );
+      return;
+    }
+    setLoudNote(null);
+    setLoudLeft((settings.data?.profile.calmSupport.loudSeconds ?? 10) + 2);
+  };
   const lights = zones.filter((z) => z.light);
   const error = home.error ?? settings.error;
 
@@ -45,6 +76,17 @@ export function SimulatorPage() {
         <h1>Home simulator</h1>
         <ConnectionBadge connected={home.connected} />
         <div className="sim3d-actions">
+          {ready && options.data?.calmSupport && (
+            <button
+              type="button"
+              className={`sim3d-tool ${loudLeft > 0 ? 'is-on' : ''}`}
+              onClick={makeLoud}
+              disabled={loudLeft > 0}
+              title="Plays a room device hearing shouting, for Calm support"
+            >
+              {loudLeft > 0 ? `🔊 Loud… ${loudLeft}s` : '🔊 Make it loud'}
+            </button>
+          )}
           {ready && show3d && (
             <button
               type="button"
@@ -90,6 +132,11 @@ export function SimulatorPage() {
             </div>
           )}
 
+          {loudNote && (
+            <div className="sim3d-error">
+              <Notice tone="info">{loudNote}</Notice>
+            </div>
+          )}
           {error && (
             <div className="sim3d-error">
               <ErrorNotice error={error} />

@@ -1,7 +1,9 @@
 import type { ChildProfile, Mission, ObjectBox, Step, Zone } from '@bhavya/shared';
+import type { DistressResult } from '../engine/calm';
 import type { SceneResult, VoiceIntent } from '../engine/engine';
 import { MuseError, type ContentPart, type MuseClient } from './client';
 import {
+  distressCheckInstructions,
   groundingInstructions,
   missionDraftInstructions,
   sceneCheckInstructions,
@@ -11,6 +13,8 @@ import {
 } from './prompts';
 import { parseSamBoxes } from './sam';
 import {
+  distressCheckJsonSchema,
+  distressCheckSchema,
   groundingJsonSchema,
   groundingSchema,
   missionDraftJsonSchema,
@@ -171,6 +175,29 @@ export class MuseService {
       seen: answer.seen.trim().slice(0, 120),
       private: answer.private,
       missionId: !answer.private && answer.routineId ? answer.routineId : null,
+      confidence: clamp01(answer.confidence),
+    };
+  }
+
+  /** Calm support: signs of distress in a short burst of room-camera frames. */
+  async checkDistress(images: string[]): Promise<DistressResult> {
+    const content: ContentPart[] = [];
+    images.forEach((image, index) => {
+      content.push({ type: 'input_text', text: `Frame ${index + 1}` });
+      content.push({ type: 'input_image', image_url: image });
+    });
+    const answer = await this.client.structured({
+      instructions: distressCheckInstructions(),
+      content,
+      schemaName: 'distress_check',
+      schema: distressCheckJsonSchema,
+      parse: (v) => distressCheckSchema.parse(v),
+      effort: 'low',
+      timeoutMs: 40_000,
+    });
+    return {
+      distress: answer.distress,
+      signs: answer.distress ? answer.signs.trim().slice(0, 80) : '',
       confidence: clamp01(answer.confidence),
     };
   }
