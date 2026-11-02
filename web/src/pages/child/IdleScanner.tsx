@@ -10,7 +10,7 @@ const LOOK_INTERVAL_MS = 15_000;
 
 const OUTCOMES: Record<ScanOutcome, string> = {
   waiting: 'needs one more matching look',
-  suggested: 'asking the child',
+  suggested: 'asking first',
   quiet: 'nothing to suggest',
   private: 'private place: looking around pauses (PRIVATE_PAUSE_MINUTES)',
   ignored: 'look skipped (too soon, or not allowed now)',

@@ -13,20 +13,20 @@ const APPS: { to: string; icon: IconName; title: string; text: string }[] = [
   {
     to: '/child',
     icon: 'heart',
-    title: 'Child app',
+    title: 'Companion app',
     text: 'Step-by-step guidance with pictures and voice, a communication board, and calm breaks.',
   },
   {
     to: '/room',
     icon: 'volume',
     title: 'Room device',
-    text: 'Calm support: an old phone or laptop in a room notices when your child seems upset and offers a quiet break.',
+    text: 'Calm support: an old phone or laptop in a room notices when someone seems upset and offers a quiet break.',
   },
   {
     to: '/simulator',
     icon: 'home',
     title: 'Home simulator',
-    text: 'Stands in for presence sensors and smart lights: move the child between rooms.',
+    text: 'Stands in for presence sensors and smart lights: move the person between rooms.',
   },
 ];
 
@@ -43,12 +43,12 @@ export function HomePage() {
     <main className="landing">
       <img
         className="landing-logo"
-        src="/logo.png"
-        alt="Bhavya: Supplemental Brain for Autism Kids"
-        width={900}
-        height={322}
+        src="/logo-wordmark.png"
+        alt="Bhavya"
+        width={895}
+        height={278}
       />
-      <h1>An independence companion for autistic children</h1>
+      <h1>An independence companion for autistic people</h1>
       <p className="lead muted">
         Bhavya remembers routines, guides each step through smart glasses, and keeps the camera off
         in private rooms. Built on Meta Muse models.

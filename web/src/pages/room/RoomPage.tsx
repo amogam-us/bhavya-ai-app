@@ -28,7 +28,7 @@ const BURST_GAP_MS = 1000;
 const OUTCOMES: Record<RoomCheckOutcome, string> = {
   calm: 'no signs of distress',
   watching: 'seen once: looking again before offering a break',
-  offered: 'quiet break offered to the child',
+  offered: 'quiet break offered',
   ignored: 'skipped (too soon, or not allowed now)',
 };
 
@@ -66,6 +66,7 @@ export function RoomPage() {
   const zones = (settings.data?.zones ?? []).filter((z) => z.type === 'camera_ok');
   const zone = zones.find((z) => z.id === room);
   const rules = settings.data?.profile.calmSupport;
+  const who = settings.data?.profile.name || 'The person';
   const support = home.state?.support;
   const childHere = !!zone && support?.room === zone.id;
   const listening = started && childHere;
@@ -118,7 +119,7 @@ export function RoomPage() {
     <main className="room-device">
       <header className="room-top">
         <Link to="/" className="brand">
-          <img src="/logo-wordmark.png" alt="Bhavya" width={121} height={38} />
+          <img src="/logo-wordmark.png" alt="Bhavya" width={122} height={38} />
         </Link>
         <h1>Room device</h1>
         <ConnectionBadge connected={home.connected} />
@@ -133,7 +134,7 @@ export function RoomPage() {
         <div className="stack">
           {!rules?.enabled && (
             <Notice tone="warn">
-              Calm support is off. A parent can turn it on in Child &amp; rooms.
+              Calm support is off. A parent can turn it on in Profile &amp; rooms.
             </Notice>
           )}
 
@@ -162,7 +163,7 @@ export function RoomPage() {
               <>
                 <p className="muted small">
                   Nothing is recorded. This device measures how loud the room is and, if a parent
-                  allows it, sends a few photos to Muse when your child is in this room. Private
+                  allows it, sends a few photos to Muse when the person is in this room. Private
                   rooms are never watched.
                 </p>
                 <Button
@@ -185,8 +186,8 @@ export function RoomPage() {
             <Card className="stack">
               <div className={`room-presence ${childHere ? 'is-here' : ''}`}>
                 {childHere
-                  ? `Your child is in the ${zone.name.toLowerCase()}. Calm support is listening.`
-                  : `Your child is not in the ${zone.name.toLowerCase()}, so this device is resting.`}
+                  ? `${who} is in the ${zone.name.toLowerCase()}. Calm support is listening.`
+                  : `${who} is not in the ${zone.name.toLowerCase()}, so this device is resting.`}
               </div>
 
               <div>
@@ -220,8 +221,8 @@ export function RoomPage() {
                   {watching
                     ? 'Looks for signs of distress every 20 seconds. Harmless movements like rocking or hand-flapping are never counted.'
                     : support?.camera
-                      ? 'The camera only turns on while your child is in this room.'
-                      : 'The camera check is off. A parent can allow it in Child & rooms.'}
+                      ? `The camera only turns on while ${who} is in this room.`
+                      : 'The camera check is off. A parent can allow it in Profile & rooms.'}
                 </p>
                 {camera.status === 'error' && <ErrorNotice error={camera.error} />}
               </div>

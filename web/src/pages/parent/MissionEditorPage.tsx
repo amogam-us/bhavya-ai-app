@@ -315,7 +315,7 @@ export function MissionEditorPage() {
               </span>
               <span className="chip">
                 <Icon name="play" size={14} />
-                {form.trigger === 'zone_enter' ? 'Starts when entering' : 'Child starts it'}
+                {form.trigger === 'zone_enter' ? 'Starts when entering' : 'Started from the app'}
               </span>
               {zone?.light && lights && (
                 <span className="chip">
@@ -387,7 +387,7 @@ export function MissionEditorPage() {
                   update({ trigger: e.target.value === 'zone_enter' ? 'zone_enter' : 'manual' })
                 }
               >
-                <option value="manual">Child starts it from the app</option>
+                <option value="manual">Started from the companion app</option>
                 <option value="zone_enter">Automatically when entering the room</option>
               </select>
             </Field>
@@ -407,7 +407,7 @@ export function MissionEditorPage() {
                     checked={hasLightOff}
                     onChange={(e) => setLight('off', e.target.checked)}
                   />
-                  Turn the light off 2 minutes after the child leaves
+                  Turn the light off 2 minutes after they leave
                 </label>
               </div>
             ) : (
@@ -418,8 +418,8 @@ export function MissionEditorPage() {
             {!cameraAllowed && (
               <div className="wide">
                 <Notice tone="info">
-                  Private room: the camera is switched off here, so every step is confirmed by your
-                  child tapping Done. Door locks are never automated.
+                  Private room: the camera is switched off here, so every step is confirmed by
+                  tapping Done. Door locks are never automated.
                 </Notice>
               </div>
             )}

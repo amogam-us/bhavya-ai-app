@@ -194,7 +194,7 @@ function HomeScreen(props: HomeScreenProps) {
           <IdleScanner debug={cameraDebug} />
         ) : (
           <p className="camera-elsewhere">
-            👓 The glasses are looking around on the child&apos;s phone
+            👓 The glasses are looking around on the phone they are paired with
           </p>
         ))}
       <div className="talk-row">

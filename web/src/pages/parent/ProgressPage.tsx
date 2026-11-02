@@ -38,7 +38,7 @@ const STATUS: Record<
 };
 
 const END_REASONS: Record<string, string> = {
-  stopped: 'Child stopped it',
+  stopped: 'Stopped in the app',
   left_room: 'Left the room',
   assistant_off: 'Helper turned off',
   not_resumed: 'Paused, not continued',
@@ -56,7 +56,7 @@ export function ProgressPage() {
     <>
       <PageHeader
         title="Progress"
-        subtitle="How much support each step still needs. Bhavya fades reminders as your child becomes independent. This is not a score."
+        subtitle="How much support each step still needs. Bhavya fades reminders as the person becomes more independent. This is not a score."
         actions={
           <Button icon="refresh" onClick={progress.reload} disabled={progress.loading}>
             Refresh

@@ -22,8 +22,8 @@ export function SimpleSimulator({ home, zones }: { home: HomeConnection; zones: 
           {state.camera === 'on' ? 'Camera allowed' : 'Camera off'}
           <div className="small" style={{ fontWeight: 500 }}>
             {currentZone
-              ? `Child is in the ${currentZone.name.toLowerCase()}${currentZone.type === 'private' ? ', a private room' : ''}.`
-              : 'Child location unknown, so the camera stays off.'}
+              ? `The person is in the ${currentZone.name.toLowerCase()}${currentZone.type === 'private' ? ', a private room' : ''}.`
+              : 'Location unknown, so the camera stays off.'}
           </div>
         </div>
       </div>
@@ -45,7 +45,7 @@ export function SimpleSimulator({ home, zones }: { home: HomeConnection; zones: 
                 ) : (
                   <Badge tone="neutral">Camera OK</Badge>
                 )}
-                {state.zone === zone.id && <Badge tone="success">Child is here</Badge>}
+                {state.zone === zone.id && <Badge tone="success">Here now</Badge>}
               </span>
             </button>
           ))}
@@ -56,7 +56,7 @@ export function SimpleSimulator({ home, zones }: { home: HomeConnection; zones: 
             disabled={!state.zone}
             onClick={() => home.send({ type: 'zone_leave' })}
           >
-            Child leaves the room
+            Leave the room
           </Button>
         </div>
       </Card>
@@ -83,7 +83,7 @@ export function SimpleSimulator({ home, zones }: { home: HomeConnection; zones: 
 
         <Card className="stack">
           <h2>Active routine</h2>
-          {!state.assistantEnabled && <Badge tone="warn">Helper paused by the child</Badge>}
+          {!state.assistantEnabled && <Badge tone="warn">Helper paused in the app</Badge>}
           {state.run ? (
             <>
               <strong>{state.run.missionTitle}</strong>

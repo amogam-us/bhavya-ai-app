@@ -21,3 +21,10 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Local tool settings
+.claude/
+
+# Local experiments and internal planning notes
+prototypes/
+PLAN.md

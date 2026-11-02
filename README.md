@@ -1,22 +1,112 @@
-# Bhavya AI
+<p align="center">
+  <img src="web/public/logo-wordmark.png" alt="Bhavya" width="420">
+</p>
 
-An AI independence companion for autistic children, built for the Meta Global AI Developer
-Hackathon. Parents teach daily routines by writing, speaking or recording a short video; Bhavya
-turns them into step-by-step missions with picture cards and guides the child through them, while
-keeping the camera off in private rooms.
+<h3 align="center">An AI independence companion for autistic people and the caregivers who support them</h3>
 
-All AI runs on **Meta Muse models** through the Meta Model API. No other LLMs are used.
+<p align="center">
+  Built for the Meta Global AI Developer Hackathon · Meta Muse models · Meta glasses
+</p>
 
-| Muse model | Used for |
+**Demo video:** _coming soon_
+
+## Why Bhavya
+
+Everyday routines, such as using the restroom, packing a bag or making breakfast, are made of many
+small steps. Many autistic people do best with clear, visual, step-by-step support, but that support
+usually means a caregiver standing next to them. Bhavya lets a caregiver teach a routine once. It
+then gives calm, private guidance through Meta glasses or a phone, and steps back as the person
+becomes more independent.
+
+Bhavya is a routine helper. It is not a therapy or medical product.
+
+## What it does
+
+- **Teach a routine once.** Write it, say it or film it. Muse drafts the steps, a simpler hint for
+  each step and picture cards. The caregiver reviews and approves every draft.
+- **Step-by-step guidance.** Voice and pictures on the phone and through the glasses. In rooms where
+  the camera is allowed, Muse checks each step; elsewhere the person taps **Done**.
+- **Support that fades.** Reminders get lighter once a step is done alone three times, and come back
+  when help is needed.
+- **Ask by voice.** "I need the toilet" sets the current routine aside, starts the restroom routine
+  and offers to continue the first one afterwards.
+- **Routine suggestions from the glasses** (opt-in). Bhavya notices where the person is and asks
+  before starting anything.
+- **Calm support** (opt-in). A spare phone in a room notices when it stays very loud or there are
+  clear signs of distress, and offers a quiet break with breathing and calm music.
+- **Communication board.** Picture buttons for Yes, No, Toilet, Too loud and more, spoken aloud.
+- **Privacy first.** The camera stays off in private rooms such as the bathroom, and frames are never
+  stored.
+
+## How it uses Meta AI
+
+| Meta technology | What Bhavya uses it for |
 |---|---|
-| `muse-spark-1.3` | Drafting missions, checking camera steps, understanding the child's spoken requests, suggesting a routine from what the glasses see |
-| `muse-image-1.0` | Picture cards for each step and the communication board |
-| `muse-voice-transcribe-1.0` | Parents speaking instructions, and the child's **Talk** button |
-| `sam-3.1` | The object finder (built, currently switched off, see below) |
+| **Muse Spark** (`muse-spark-1.3`) | Turning text or a demo video into a routine, checking camera steps, understanding spoken requests, suggesting a routine from what the glasses see, and Calm support's distress check |
+| **Muse Image** (`muse-image-1.0`) | Picture cards for each step and the communication board |
+| **Muse Voice Transcribe** (`muse-voice-transcribe-1.0`) | Caregivers speaking a routine, and the **Talk** button |
+| **SAM 3.1** (`sam-3.1`) | An object finder that highlights a step's object (built, switched off for now) |
+| **Meta Wearables Device Access Toolkit** | The Android app streams the glasses camera; the Mock Device Kit stands in when no glasses are at hand |
 
-Spoken guidance uses the device's built-in text-to-speech (not an AI model).
+All AI runs on Meta models through the Meta Model API; no other AI models are used. Muse answers in
+strict JSON (structured output), which the hub validates before using. Spoken guidance uses the
+device's built-in text-to-speech.
 
-## Quick start
+## Safety and privacy by design
+
+- **The engine decides, Muse advises.** A deterministic mission engine changes steps, starts
+  routines and switches lights. Muse only drafts, looks and listens.
+- **Caregivers approve every AI draft.** Any edit sends a routine back to draft.
+- **Private rooms stay private.** No camera checks happen in private rooms: the app stops the
+  camera and the hub rejects frames.
+- **Nothing is kept.** Frames and audio are never stored, Muse requests are sent with
+  `store: false`, and the `-contributor` models are never used.
+- **Muse looks at objects, places and task progress, not at the person.** The one exception is
+  opt-in Calm support, which asks only whether clear signs of distress are visible. Rocking,
+  hand-flapping and other repetitive movements are never counted, and no one is identified.
+- **The person always chooses.** Suggestions and breaks are offers with **Yes** and **Not now**;
+  **Help** and **Stop** always work.
+- **Smart-home actions are an allowlist** (light on, light off) for the routine's room. There is no
+  lock action, so a door is never locked automatically.
+- **Progress measures support needed, not obedience.** No scores, points or stars.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  caregiver["Parent dashboard<br/>web"]
+  person["Companion app<br/>phone or web"]
+  glasses["Meta glasses<br/>Android app + Device Access Toolkit"]
+  room["Room device<br/>spare phone, Calm support"]
+  sim["3D home simulator<br/>sensors and lights"]
+  hub["Home hub, Node.js<br/>mission engine · privacy gate · SQLite"]
+  muse["Meta Model API<br/>Muse Spark · Muse Image · Muse Voice"]
+
+  glasses --- person
+  caregiver <-->|REST + WebSocket| hub
+  person <-->|REST + WebSocket| hub
+  room <-->|REST + WebSocket| hub
+  sim <-->|REST + WebSocket| hub
+  hub -->|"HTTPS, store: false"| muse
+```
+
+```
+shared/   Types and zod schemas shared by hub and web (missions, protocol, API)
+hub/      Home hub: Fastify REST API, WebSocket device bridge, SQLite (node:sqlite)
+  src/engine/    Mission state machine, prompt levels, timers, Calm support, smart-home actions
+  src/muse/      Meta Model API client, prompts, JSON schemas
+  src/missions/  Drafting, safety rules, picture cards
+  src/http/      Routes, WebSocket bridge, error handling
+  test/          Unit tests (vitest)
+web/      Vite + React app
+  src/pages/parent     Parent dashboard
+  src/pages/child      Companion app (served at /child)
+  src/pages/room       Room device for Calm support
+  src/pages/simulator  3D home simulator
+android/  Kotlin app for Meta glasses: hosts the companion app, adds the glasses camera and voice
+```
+
+## Run it locally
 
 Requirements: Node.js 22.13 or newer, and a Meta Model API key.
 
@@ -26,108 +116,53 @@ cp .env.example .env      # then put your key in MODEL_API_KEY
 npm run dev
 ```
 
-Open <http://localhost:5173>. The home page links to the three apps:
+Open <http://localhost:5173>. The home page links to:
 
-- **Parent dashboard** (`/parent`): create, review and approve routines; progress; child settings and rooms.
-- **Child app** (`/child`): the step player, communication board and break screen.
-- **Home simulator** (`/simulator`): a 3D home that stands in for presence sensors and smart
-  lights, with the real child app in a phone frame next to it.
+- **Parent dashboard** (`/parent`): create, review and approve routines, follow progress, and set
+  up the profile and rooms.
+- **Companion app** (`/child`): the step player, communication board and break screen.
+- **Room device** (`/room`): Calm support on a spare phone or laptop.
+- **Home simulator** (`/simulator`): a 3D home that stands in for door sensors and smart lights,
+  with the real companion app in a phone frame next to it.
 
-Two demo routines are added on first start: *Using the restroom* (private room, starts
-automatically, camera off) and *Pack your school bag* (living room, camera checks).
+Two demo routines are added on first start: _Using the restroom_ (private room, starts
+automatically, camera off) and _Pack your school bag_ (living room, camera checks).
 
 ### Demo walkthrough
 
-1. Open the simulator. The child app runs in the phone on the right; tap **Start** in it
+1. Open the simulator. The companion app runs in the phone on the right; tap **Start** in it
    (browsers only allow sound after a tap).
-2. Walk the child into the **Restroom** (arrow keys, or the "Walk to" buttons): the door sensor
-   fires, the camera turns off, the light turns on and the routine starts in the phone. Tap
-   **Done**, **Help** or **Break** to see each path.
-3. Walk to the **Living room**, then start *Pack your school bag* in the phone. The camera opens
-   and Muse Spark confirms each step.
-5. During the bag routine, tap **Talk** and say "I need the toilet": the bag routine waits, the
-   restroom routine starts, and when it ends the child is asked "Do you want to continue Pack your
+2. Walk the person into the **Restroom** (arrow keys, or click a room). The door sensor fires, the
+   camera turns off, the light turns on and the routine starts in the phone. Tap **Done**, **Help**
+   or **Break** to see each path.
+3. Walk to the **Living room** and start _Pack your school bag_ in the phone. The camera opens and
+   Muse Spark confirms each step.
+4. During the bag routine, tap **Talk** and say "I need the toilet". The bag routine waits, the
+   restroom routine starts, and when it ends the phone asks "Do you want to continue Pack your
    school bag?".
-6. Watch help requests and progress arrive in the parent dashboard.
+5. Watch help requests and progress arrive in the parent dashboard.
 
-### Home simulator
+### Options
 
-The 3D home (three.js, loaded only on this page) plays the part of the home's door sensors and
-smart lights:
-
-- Walk the child with <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> or <kbd>W</kbd>
-  <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> (hold <kbd>Shift</kbd> to run), or click a room. Walls
-  and furniture block the way. Walking into a room sends the same event a door sensor would;
-  walking out of the front door means the hub no longer knows where the child is.
-- Click a lamp, or open **Lights**, to switch a smart light.
-- The glasses show a green light and a faint view cone only while the camera is allowed.
-- Graphics quality is chosen automatically; slower laptops get a lighter mode. Browsers that
-  cannot draw 3D get the original button-based simulator instead.
-- To follow the hub's decisions step by step (sensors, privacy, Muse answers, engine), start the
-  hub with `LOG_LEVEL=debug`.
-
-Options in `.env` (restart the hub after changing them):
+Set these in `.env` and restart the hub.
 
 | Option | Values | What it does |
 |---|---|---|
+| `HUB_PORT` | `8787` (default) | The hub's port. Change it if Windows has reserved 8787. |
 | `SIMULATOR` | `show` (default), `hide` | `hide` removes the simulator's link from the home page; `/simulator` still works. |
 | `SIMULATOR_VIEW` | `both` (default), `3d`, `simple` | `both`: 3D with a **Simple view** button. `3d`: 3D only. `simple`: the button-based simulator only. |
-| `GLASSES_SUGGESTIONS` | `on` (default), `off` | `off` turns off finding routines with the glasses camera for the whole hub; the parent setting is hidden. |
+| `GLASSES_SUGGESTIONS` | `on` (default), `off` | `off` turns off routine suggestions from the glasses for the whole hub; the parent setting is hidden. |
 | `PRIVATE_PAUSE_MINUTES` | `10` (default), `1` to `60` | Minutes the glasses stop looking around after seeing a private place. Use `1` for demos. |
 | `CALM_SUPPORT` | `on` (default), `off` | `off` turns off Calm support for the whole hub; its settings, room device page and simulator button are hidden. |
-| `CAMERA_DEBUG` | `off` (default), `on` | For testing: the child app shows what Muse saw in each glasses frame and each step check. |
+| `CAMERA_DEBUG` | `off` (default), `on` | For testing: shows what Muse saw in each glasses frame, step check and room check. |
+| `LOG_LEVEL` | `info` (default), `debug` | `debug` logs every hub decision step by step: sensors, privacy, Muse answers, engine. |
 
 Rooms are matched to hub rooms by id (`restroom`, `bedroom`, `living_room`, `kitchen`), so names,
 privacy and lights follow the parent's settings.
 
-### Calm support
-
-Off by default; a parent turns it on in **Child & rooms**. An old phone or laptop placed in a room
-where the camera is allowed opens `/room` (the **Room device** tile) and picks its room. While the
-child is in that room it:
-
-- measures loudness on the device (nothing is recorded) and reports it once a second, and
-- if the parent also allows it, sends a burst of 4 photos every 20 seconds, which Muse Spark checks
-  for clear signs of distress (crying, screaming, covering ears, hitting, curling up, agitated
-  pacing). Harmless repetitive movements such as rocking or hand-flapping are never counted.
-
-When it stays very loud for the chosen time, or distress is seen in two looks in a row, the child
-is asked "Do you want a quiet break?" (the break screen with breathing and calm music) and the
-parent gets a notification. During a routine it uses the routine's own break. The child can always
-say "Not now". After an offer there is no new one for 5 minutes, and 10 minutes after "Not now".
-Private rooms are never watched. "I need a break" said with the Talk button also starts a quiet
-break. For demos, the simulator's **Make it loud** button plays a room device hearing shouting.
-
-### Talking to Bhavya
-
-The child taps **Talk**, speaks, and taps again (it stops by itself after 10 seconds). Muse Voice
-writes down the words and Muse Spark works out what the child wants: start or continue a routine,
-help, a break, stop, or "I'm done". The engine then decides what to do. A clear request for another
-routine sets the current one aside (only one waits at a time) and offers it again afterwards; a
-request Muse is unsure about becomes a yes/no question; anything else changes nothing. Audio is
-never stored.
-
-### Routine suggestions from the glasses
-
-Off by default; a parent turns it on in **Child & rooms** ("Suggest routines from the glasses
-camera"). While no routine is running, the glasses take a look every 15 seconds and Muse Spark
-checks whether one of the approved routines in a camera-OK room fits the place. Bhavya only asks
-("Do you want to do Pack your school bag?") after the same answer twice in a row, and never starts
-anything without a yes. Limits: a routine the child says no to (or does not answer) is not
-suggested again for 15 minutes, at most 4 suggestions per hour, never in a known private room, and
-if Muse sees a bathroom or a place to change, the glasses stop looking for 10 minutes. Without
-presence sensors the hub cannot know the room in advance, so that first private frame does reach
-Muse (with `store: false`, never saved); door sensors in private rooms avoid even that.
-
-### Object finder (switched off)
-
-Highlighting a step's object with SAM 3.1 ("Where is the toothbrush?", "Photo from video") is
-still in the code but switched off in `shared/src/features.ts` (`FEATURES.objectFinder`). While it
-is off, the hub does not register its routes and the web and Android apps hide its controls.
-
 ### Using a phone
 
-The child app works on a phone on the same Wi-Fi, at `http://<computer-ip>:5173/child` (the hub
+The companion app works on a phone on the same Wi-Fi, at `http://<computer-ip>:5173/child` (the hub
 prints the address). Browsers only allow the **camera and microphone over HTTPS**, so for camera
 steps on a phone start the dev server with HTTPS:
 
@@ -137,6 +172,13 @@ BHAVYA_HTTPS=1 npm run dev     # PowerShell: $env:BHAVYA_HTTPS=1; npm run dev
 
 Then open `https://<computer-ip>:5173/child` and accept the self-signed certificate warning.
 
+### Android app for the glasses
+
+The [Android app](android/README.md) shows the companion app from the hub and connects Meta glasses
+through the Meta Wearables Device Access Toolkit. Inside it, the companion app uses the glasses
+camera and Android's voice instead of the browser's (`web/src/lib/native.ts`). Without glasses,
+Meta's Mock Device Kit uses the phone camera as the glasses camera.
+
 ### Production build
 
 ```bash
@@ -144,74 +186,80 @@ npm run build     # builds the web app into web/dist
 npm start         # the hub serves the API and the web app on http://localhost:8787
 ```
 
-## Scripts
+### Scripts
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Hub (with reload) on port 8787 and the web app on port 5173 |
-| `npm run check` | Typecheck, lint and unit tests |
+| `npm run dev` | Hub (with reload) and the web app on port 5173 |
+| `npm run check` | Type check, lint and unit tests |
 | `npm test` | Unit tests only |
 | `npm run format` | Format the code with Prettier |
 
-## Architecture
+## How the features work
 
-```
-web (React)  ── REST + WebSocket ──>  hub (Node.js)  ── HTTPS ──>  Meta Model API (Muse)
- parent / child / simulator             mission engine, privacy gate,
-                                        Muse gateway, device bridge, SQLite
-```
+### Talking to Bhavya
 
-```
-shared/   Types and zod schemas shared by hub and web (missions, protocol, API)
-hub/      Home hub: Fastify REST API, WebSocket device bridge, SQLite (node:sqlite)
-  src/engine/    Mission state machine, prompt levels, timers, smart-home actions
-  src/muse/      Meta Model API client, prompts, JSON schemas, SAM output parser
-  src/missions/  Drafting, safety rules, picture cards
-  src/http/      Routes, WebSocket bridge, error handling
-  test/          Unit tests (vitest)
-web/      Vite + React app
-  src/pages/parent     Parent dashboard
-  src/pages/child      Child app
-  src/pages/simulator  Home simulator
-android/  Kotlin app for Meta glasses: hosts the child app, adds the glasses camera and voice
-data/     Database and generated pictures (created at runtime, not committed)
-```
+The person taps **Talk**, speaks, and taps again (it stops by itself after 10 seconds). Muse Voice
+writes down the words and Muse Spark works out what they want: start or continue a routine, help,
+a break, stop, or "I'm done". The engine then decides what to do. A clear request for another
+routine sets the current one aside (only one waits at a time) and offers it again afterwards. A
+request Muse is unsure about becomes a yes/no question, and anything else changes nothing. Audio is
+never stored.
 
-### Android app for the glasses
+### Routine suggestions from the glasses
 
-The [Android app](android/README.md) shows the child app from the hub and connects Meta glasses
-through the Meta Wearables Device Access Toolkit. Inside it, the child app uses the glasses camera
-and Android's voice instead of the browser's (`web/src/lib/native.ts`). Without glasses, Meta's
-Mock Device Kit uses the phone camera as the glasses camera.
+Off by default; a parent turns it on in **Profile & rooms**. While no routine is running, the
+glasses take a look every 15 seconds and Muse Spark checks whether one of the approved routines in
+a camera-OK room fits the place. Bhavya only asks ("Do you want to do Pack your school bag?") after
+the same answer twice in a row, and never starts anything without a yes.
 
-### Design rules
+Limits:
 
-- **The engine decides, Muse advises.** The mission engine is deterministic code. Muse drafts
-  missions, judges camera frames and interprets the child's words, but only the engine changes
-  steps, starts routines or switches devices.
-- **Smart-home actions are an allowlist** (`light_on`, `light_off`) scoped to the mission's room.
-  There is no lock action, so door locks can never be automated. A light is never switched off
-  while the child is in that room.
-- **Privacy gate.** Step checks use the camera only while the child is in a known camera-OK room,
-  and never during a routine for a private room. In private rooms the child app stops the camera
-  and the hub rejects frames. Frames are never stored,
-  Muse requests are sent with `store: false`, and the `-contributor` models are never used.
-- **Muse is never asked about the child's body, face, emotions or movements**, only objects and
-  task state. Repetitive movements are never flagged.
-- **Parents approve every AI draft.** Any edit sends a routine back to draft.
-- **Progress measures support needed, not obedience.** Prompts fade one level after three
-  independent completions and come back after help is needed.
+- a routine the person says no to (or does not answer) is not suggested again for 15 minutes;
+- at most 4 suggestions per hour;
+- never in a known private room;
+- if Muse sees a bathroom or a place to change, the glasses stop looking for 10 minutes.
 
-## Status and next steps
+Without door sensors the hub cannot know the room in advance, so that first private frame does
+reach Muse (with `store: false`, never saved). Door sensors in private rooms avoid even that.
 
-Built and tested: the hub, the parent dashboard, the child app (web) and the home simulator,
-against the live Meta Model API.
+### Calm support
 
-Built, compiled and unit tested, not yet run on a phone: the Android glasses app.
+Off by default; a parent turns it on in **Profile & rooms**. A spare phone or laptop in a room
+where the camera is allowed opens `/room` and picks its room. While the person is in that room it:
 
-Not built yet:
+- measures loudness on the device (nothing is recorded) and reports it once a second, and
+- if the parent also allows it, sends a burst of 4 photos every 20 seconds, which Muse Spark checks
+  for clear signs of distress (crying, screaming, covering ears, hitting, curling up, agitated
+  pacing). Harmless repetitive movements such as rocking or hand-flapping are never counted.
 
-- Showing steps on the Meta Ray-Ban Display screen, and tapping the glasses touchpad for Done.
-- A living-room observer camera, and real smart-home devices (Home Assistant).
+When it stays very loud for the chosen time, or distress is seen in two looks in a row, the person
+is asked "Do you want a quiet break?" (the break screen with breathing and calm music), and the
+parent gets a notification. During a routine it uses the routine's own break. The person can always
+say "Not now". After an offer there is no new one for 5 minutes, or for 10 minutes after "Not now".
+Private rooms are never watched. Saying "I need a break" with **Talk** also starts a quiet break.
+For demos, the simulator's **Make it loud** button plays a room device hearing shouting.
 
-See [PLAN.md](PLAN.md) for the full plan.
+### Object finder (switched off)
+
+Highlighting a step's object with SAM 3.1 ("Where is the toothbrush?", "Photo from video") is still
+in the code but switched off in `shared/src/features.ts` (`FEATURES.objectFinder`). While it is off,
+the hub does not register its routes and the web and Android apps hide its controls.
+
+## Status and roadmap
+
+Built and tested against the live Meta Model API: the hub, the parent dashboard, the companion app,
+the 3D home simulator and the Calm support room device. The Android glasses app runs on an Android
+phone with Meta's Mock Device Kit.
+
+Next:
+
+- Show steps on the Meta Ray-Ban Display and confirm them with the glasses touchpad.
+- Real door sensors and smart lights through Home Assistant.
+- Run on Meta's open-weight models on the home hub, so nothing leaves the home.
+- Switch the SAM 3.1 object finder back on.
+
+## Built with
+
+Node.js 22, Fastify, SQLite (`node:sqlite`), zod, React 18, Vite, three.js, Kotlin, Jetpack
+Compose, and the Meta Wearables Device Access Toolkit.

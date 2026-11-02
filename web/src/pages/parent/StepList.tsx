@@ -47,7 +47,7 @@ export function StepList(props: StepListProps) {
                       <Icon name="camera" size={15} />
                     </span>
                   ) : (
-                    <span title="Your child taps Done">
+                    <span title="Confirmed by tapping Done">
                       <Icon name="tap" size={15} />
                     </span>
                   )}

@@ -109,7 +109,7 @@ export function RunScreen(props: RunScreenProps) {
           <CameraPanel run={run} onHint={onHint} debug={cameraDebug} />
         ) : (
           <p className="camera-elsewhere">
-            📷 The camera checks this step on the child&apos;s phone
+            📷 The camera checks this step on the phone with the glasses
           </p>
         ))}
 

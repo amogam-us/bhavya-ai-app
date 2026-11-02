@@ -9,7 +9,7 @@ const NAV: { to: string; icon: IconName; label: string; end?: boolean; primary?:
   { to: '/parent/new', icon: 'plus', label: 'New routine', primary: true },
   { to: '/parent', icon: 'list', label: 'Routines', end: true },
   { to: '/parent/progress', icon: 'chart', label: 'Progress' },
-  { to: '/parent/settings', icon: 'settings', label: 'Child & rooms' },
+  { to: '/parent/settings', icon: 'settings', label: 'Profile & rooms' },
 ];
 
 /** Kinds that need the parent's attention right away. */
@@ -35,7 +35,7 @@ export function ParentLayout() {
     <div className="parent-shell">
       <aside className="sidebar">
         <Link to="/" className="brand">
-          <img src="/logo-wordmark.png" alt="Bhavya" width={121} height={38} />
+          <img src="/logo-wordmark.png" alt="Bhavya" width={122} height={38} />
         </Link>
         <nav className="nav" aria-label="Parent dashboard">
           {NAV.map((item) => (

@@ -97,7 +97,7 @@ export function Home3DView(props: Home3DViewProps) {
       </div>
       <p className="sim3d-hint">Arrow keys to walk · click a room or a lamp · drag to turn</p>
 
-      <div className="sim3d-rooms" role="group" aria-label="Walk the child to">
+      <div className="sim3d-rooms" role="group" aria-label="Walk to a room">
         {SLOTS.map((slot) => (
           <button
             key={slot}

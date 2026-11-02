@@ -62,7 +62,7 @@ fun SetupScreen(
   ) {
     Text("Bhavya setup", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
     Text(
-        "For parents. Your child will see the Bhavya child app after this.",
+        "For parents and caregivers. After this, the phone shows the Bhavya companion app.",
         style = MaterialTheme.typography.bodyMedium,
     )
 
@@ -132,7 +132,7 @@ fun SetupScreen(
         },
         modifier = Modifier.fillMaxWidth(),
     ) {
-      Text("Open the child app")
+      Text("Open the companion app")
     }
   }
 }

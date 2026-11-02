@@ -2,7 +2,7 @@
   "name": "bhavya-ai",
   "version": "0.1.0",
   "private": true,
-  "description": "AI-powered independence companion for autistic children, built on Meta Muse models.",
+  "description": "AI-powered independence companion for autistic people and their caregivers, built on Meta Muse models.",
   "type": "module",
   "workspaces": [
     "shared",

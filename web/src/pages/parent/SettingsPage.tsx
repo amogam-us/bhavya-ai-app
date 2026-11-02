@@ -16,7 +16,7 @@ interface Status {
 type SettingsTab = 'child' | 'rooms' | 'board';
 
 const TABS: { id: SettingsTab; label: string; icon: IconName }[] = [
-  { id: 'child', label: 'Your child', icon: 'heart' },
+  { id: 'child', label: 'Profile', icon: 'heart' },
   { id: 'rooms', label: 'Rooms', icon: 'home' },
   { id: 'board', label: 'Board pictures', icon: 'image' },
 ];
@@ -30,8 +30,8 @@ export function SettingsPage() {
   return (
     <>
       <PageHeader
-        title="Child & rooms"
-        subtitle="How Bhavya talks to your child, and which rooms are private."
+        title="Profile & rooms"
+        subtitle="Who Bhavya supports, how it talks, and which rooms are private."
       />
       <div className="page-tabs" role="tablist" aria-label="Settings">
         {TABS.map((t) => (
@@ -176,7 +176,7 @@ function ProfileCard({
 
   return (
     <Card className="settings-card">
-      <Section title="About your child" text="The name and language used in every routine.">
+      <Section title="Who Bhavya supports" text="The name and language used in every routine.">
         <div className="grid-2">
           <Field label="Name">
             <input
@@ -258,7 +258,10 @@ function ProfileCard({
         </div>
       </Section>
 
-      <Section title="Pictures and breaks" text="What your child sees on screen and during breaks.">
+      <Section
+        title="Pictures and breaks"
+        text="What is shown on screen and offered during breaks."
+      >
         <Switch checked={profile.showText} onChange={(showText) => set({ showText })}>
           Show words next to pictures
         </Switch>
@@ -277,7 +280,7 @@ function ProfileCard({
       </Section>
 
       {suggestionsAvailable && (
-        <Section title="Glasses suggestions" text="Offer a routine that fits where your child is.">
+        <Section title="Glasses suggestions" text="Offer a routine that fits the place.">
           <Switch
             checked={profile.glassesSuggestions}
             onChange={(glassesSuggestions) => set({ glassesSuggestions })}
@@ -286,7 +289,7 @@ function ProfileCard({
           </Switch>
           <p className="field-hint">
             When no routine is running, the glasses take a look every 15 seconds and Muse checks
-            whether a routine fits the place. Your child is always asked first. Pictures are never
+            whether a routine fits the place. The person is always asked first. Pictures are never
             saved. It stays off in private rooms and pauses for {privatePauseMinutes}{' '}
             {privatePauseMinutes === 1 ? 'minute' : 'minutes'} after seeing a bathroom or a place to
             change.
@@ -295,9 +298,9 @@ function ProfileCard({
       )}
 
       {calmAvailable && (
-        <Section title="Calm support" text="Offer a quiet break when your child seems upset.">
+        <Section title="Calm support" text="Offer a quiet break when the person seems upset.">
           <Switch checked={calm.enabled} onChange={(enabled) => setCalm({ enabled })}>
-            Calm support: offer a quiet break when my child seems upset
+            Turn on Calm support
           </Switch>
           {calm.enabled && (
             <>
@@ -336,7 +339,7 @@ function ProfileCard({
           <p className="field-hint">
             Needs a room device: open /room on an old phone or laptop in a room where the camera is
             allowed. Nothing is recorded, private rooms are never watched, and harmless movements
-            like rocking or hand-flapping are never counted. Your child can always say &quot;Not
+            like rocking or hand-flapping are never counted. They can always say &quot;Not
             now&quot;, and you get a notification.
           </p>
         </Section>
@@ -500,7 +503,7 @@ function BoardCard() {
         <div>
           <h2>Communication board pictures</h2>
           <p className="muted small">
-            Your child taps these to say something without speaking. Muse Image draws a simple
+            These pictures let the person say something without speaking. Muse Image draws a simple
             picture for each one.
           </p>
         </div>

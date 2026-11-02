@@ -132,7 +132,7 @@ export function NewMissionPage() {
     <>
       <PageHeader
         title="New routine"
-        subtitle="Muse drafts the steps. You review and approve them before your child sees anything."
+        subtitle="Muse drafts the steps. You review and approve them before anything is shown."
       />
       {settings.loading && <Spinner label="Loading rooms…" />}
       <ErrorNotice error={settings.error} />
@@ -190,7 +190,7 @@ export function NewMissionPage() {
                 <h2>Describe the routine</h2>
                 <Field
                   label="Steps in your own words"
-                  hint="Mention the objects your child uses and anything that often goes wrong."
+                  hint="Mention the objects they use and anything that often goes wrong."
                 >
                   <textarea
                     value={instructions}
@@ -249,7 +249,7 @@ export function NewMissionPage() {
               <li>
                 <div>
                   <b>Muse drafts the steps</b>
-                  <span>One clear action per step, in your child&apos;s language.</span>
+                  <span>One clear action per step, in their own language.</span>
                 </div>
               </li>
               <li>
@@ -261,7 +261,7 @@ export function NewMissionPage() {
               <li>
                 <div>
                   <b>You approve it</b>
-                  <span>Only then does your child see the routine.</span>
+                  <span>Only then does it appear in the companion app.</span>
                 </div>
               </li>
             </ol>
@@ -269,7 +269,7 @@ export function NewMissionPage() {
               <b>{activeMode === 'text' ? 'Tips for writing' : 'Tips for the video'}</b>
               {activeMode === 'text' ? (
                 <ul>
-                  <li>Use your child&apos;s own things: &ldquo;the cup with the star&rdquo;.</li>
+                  <li>Use their own things: &ldquo;the cup with the star&rdquo;.</li>
                   <li>Say where things are: &ldquo;on the low shelf&rdquo;.</li>
                   <li>Mention what often goes wrong.</li>
                 </ul>

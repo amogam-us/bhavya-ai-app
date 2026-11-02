@@ -106,7 +106,7 @@ export function StepEditor(props: StepEditorProps) {
           <>
             <Field
               label="Full guidance"
-              hint="Spoken and shown when your child needs the most help (level 3)."
+              hint="Spoken and shown when the most help is needed (level 3)."
             >
               <textarea
                 rows={3}
@@ -119,7 +119,7 @@ export function StepEditor(props: StepEditorProps) {
             </Field>
             <Field
               label="Short reminder"
-              hint="Used once your child has done this step alone a few times (level 2)."
+              hint="Used once this step has been done alone a few times (level 2)."
             >
               <input
                 type="text"
@@ -171,9 +171,9 @@ export function StepEditor(props: StepEditorProps) {
                   });
                 }}
               >
-                <option value="tap">Child taps Done</option>
+                <option value="tap">Tap Done in the app</option>
                 <option value="vision" disabled={!cameraAllowed}>
-                  Camera sees it (child can still tap)
+                  Camera sees it (tapping Done still works)
                 </option>
               </select>
             </Field>
@@ -245,14 +245,14 @@ export function StepEditor(props: StepEditorProps) {
                 />
               </label>
               <span className="field-hint">
-                {cardHint ?? 'A clear picture of the step helps your child most.'}
+                {cardHint ?? 'A clear picture of the step helps most.'}
               </span>
             </div>
           </div>
         )}
 
         {tab === 'safety' && (
-          <Field label="Safety notes" hint="One per line, shown to your child. Optional.">
+          <Field label="Safety notes" hint="One per line, shown in the app. Optional.">
             <textarea
               rows={4}
               value={step.safety.join('\n')}

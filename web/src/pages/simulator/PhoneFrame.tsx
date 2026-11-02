@@ -40,7 +40,7 @@ export function PhoneFrame({ src }: { src: string }) {
         >
           <iframe
             src={src}
-            title="Child app"
+            title="Companion app"
             allow="microphone; camera; autoplay"
             style={{ width: SCREEN_W, height: SCREEN_H }}
           />

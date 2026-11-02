@@ -12,7 +12,7 @@ export function triggerLabel(mission: Mission, zones: Zone[]): string {
   const zone = zones.find((z) => z.id === mission.zone);
   return mission.trigger === 'zone_enter'
     ? `Starts when entering the ${zone?.name.toLowerCase() ?? 'room'}`
-    : 'Started from the child app';
+    : 'Started from the companion app';
 }
 
 export function MissionsPage() {
@@ -40,7 +40,7 @@ export function MissionsPage() {
       {list.length > 0 && (
         <div className="stat-row">
           <Stat icon="list" value={list.length} label="Routines" />
-          <Stat icon="check" tone="success" value={approved} label="Ready for your child" />
+          <Stat icon="check" tone="success" value={approved} label="Ready to use" />
           <Stat
             icon="edit"
             tone="warn"

@@ -20,7 +20,7 @@ export function StepFlow({ step, index }: { step: Step; index: number }) {
             {step.card ? <img src={step.card} alt="" /> : <Icon name="volume" size={18} />}
           </span>
           <div>
-            <b>Your child sees and hears</b>
+            <b>What they see and hear</b>
             <p>&ldquo;{step.prompts.full}&rdquo;</p>
             <p className="flow-note">
               After doing it alone a few times: &ldquo;{step.prompts.short}&rdquo;
@@ -38,8 +38,8 @@ export function StepFlow({ step, index }: { step: Step; index: number }) {
             <b>A simpler hint</b>
             <p>&ldquo;{step.ifStuck}&rdquo;</p>
             <p className="flow-note">
-              You are told at once when your child taps Help, or after {REMINDERS_BEFORE_PARENT}{' '}
-              hints without progress.
+              You are told at once when they tap Help, or after {REMINDERS_BEFORE_PARENT} hints
+              without progress.
             </p>
           </div>
         </li>
@@ -52,8 +52,8 @@ export function StepFlow({ step, index }: { step: Step; index: number }) {
             <b>Step done</b>
             <p>
               {step.check === 'vision'
-                ? `The camera sees ${step.expect?.trim() || 'the finished step'}, or your child taps Done.`
-                : 'Your child taps Done.'}
+                ? `The camera sees ${step.expect?.trim() || 'the finished step'}, or they tap Done.`
+                : 'They tap Done.'}
             </p>
           </div>
         </li>

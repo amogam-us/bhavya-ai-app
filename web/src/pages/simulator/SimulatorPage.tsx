@@ -53,7 +53,7 @@ export function SimulatorPage() {
   const makeLoud = () => {
     if (!supportRoom) {
       setLoudNote(
-        'Calm support is not listening here. Turn it on in Child & rooms and walk the child into a camera-OK room.',
+        'Calm support is not listening here. Turn it on in Profile & rooms and walk the person into a camera-OK room.',
       );
       return;
     }
@@ -71,7 +71,7 @@ export function SimulatorPage() {
     <div className="sim3d">
       <header className="sim3d-top">
         <Link to="/" className="brand">
-          <img src="/logo-wordmark.png" alt="Bhavya" width={121} height={38} />
+          <img src="/logo-wordmark.png" alt="Bhavya" width={122} height={38} />
         </Link>
         <h1>Home simulator</h1>
         <ConnectionBadge connected={home.connected} />
@@ -177,10 +177,10 @@ export function SimulatorPage() {
           )}
         </section>
 
-        <aside className="sim3d-side" aria-label="Child's phone">
+        <aside className="sim3d-side" aria-label="Phone">
           {/* The preview never uses this computer's camera: the camera belongs to the child's phone or glasses. */}
           <PhoneFrame src="/child?camera=off" />
-          <p className="sim3d-side-note">The child&apos;s app. Tap Start to turn on its voice.</p>
+          <p className="sim3d-side-note">The companion app. Tap Start to turn on its voice.</p>
         </aside>
       </div>
     </div>
