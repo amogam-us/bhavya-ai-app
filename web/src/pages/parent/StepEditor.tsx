@@ -1,6 +1,17 @@
 import { FEATURES, type Step } from '@bhavya/shared';
 import { useEffect, useState } from 'react';
+import { Icon, type IconName } from '../../components/Icon';
 import { Button, Field } from '../../components/ui';
+
+export type StepTab = 'say' | 'stuck' | 'check' | 'picture' | 'safety';
+
+const TABS: { id: StepTab; label: string; icon: IconName }[] = [
+  { id: 'say', label: 'Say', icon: 'volume' },
+  { id: 'stuck', label: 'If stuck', icon: 'help' },
+  { id: 'check', label: 'Done check', icon: 'check' },
+  { id: 'picture', label: 'Picture', icon: 'image' },
+  { id: 'safety', label: 'Safety', icon: 'lock' },
+];
 
 interface StepEditorProps {
   step: Step;
@@ -11,6 +22,9 @@ interface StepEditorProps {
   saved: boolean;
   cardBusy: boolean;
   hasDemoFrame: boolean;
+  tab: StepTab;
+  onTab: (tab: StepTab) => void;
+  onSelectIndex: (index: number) => void;
   onChange: (patch: Partial<Step>) => void;
   onMove: (direction: -1 | 1) => void;
   onRemove: () => void;
@@ -19,154 +33,151 @@ interface StepEditorProps {
   onUploadCard: (file: File) => void;
 }
 
+/** Edits one step, a tab at a time, so nothing needs a long scroll. */
 export function StepEditor(props: StepEditorProps) {
-  const { step, index, count, cameraAllowed, saved, cardBusy } = props;
+  const { step, index, count, cameraAllowed, saved, cardBusy, tab } = props;
   const cardHint = saved ? null : 'Save the routine first to add a picture.';
+  // Small dots point the parent at things still to do.
+  const needs: Partial<Record<StepTab, boolean>> = {
+    picture: !step.card,
+    check: step.check === 'vision' && !step.expect?.trim(),
+  };
 
   return (
-    <section className="card step-editor" aria-label={`Step ${index + 1}`}>
-      <div className="stack">
-        <div className="step-card-image">
-          {step.card ? <img src={step.card} alt={step.action} /> : <span>No picture yet</span>}
-        </div>
+    <section className="editor-panel" aria-label={`Step ${index + 1}`}>
+      <div className="step-head">
+        <span className="step-number">{index + 1}</span>
+        <input
+          type="text"
+          className="step-title-input"
+          aria-label="Step name"
+          value={step.action}
+          maxLength={80}
+          onChange={(e) => props.onChange({ action: e.target.value })}
+        />
         <Button
           size="sm"
-          icon="sparkle"
-          busy={cardBusy}
-          disabled={!saved}
-          title={cardHint ?? 'Draw a picture card with Muse Image'}
-          onClick={props.onMakeCard}
-        >
-          {step.card ? 'New picture' : 'Make picture'}
-        </Button>
-        {FEATURES.objectFinder && props.hasDemoFrame && step.object && (
-          <Button
-            size="sm"
-            icon="image"
-            disabled={!saved || cardBusy}
-            title="Cut the real object out of your video with SAM 3.1"
-            onClick={props.onCardFromDemo}
-          >
-            Photo from video
-          </Button>
-        )}
-        <label className={`btn btn-secondary btn-sm ${!saved || cardBusy ? 'is-disabled' : ''}`}>
-          Upload photo
-          <input
-            type="file"
-            accept="image/*"
-            className="visually-hidden"
-            disabled={!saved || cardBusy}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = '';
-              if (file) props.onUploadCard(file);
-            }}
-          />
-        </label>
-        {cardHint && <span className="field-hint">{cardHint}</span>}
+          variant="ghost"
+          icon="up"
+          aria-label="Move step up"
+          title="Move up"
+          disabled={index === 0}
+          onClick={() => props.onMove(-1)}
+        />
+        <Button
+          size="sm"
+          variant="ghost"
+          icon="down"
+          aria-label="Move step down"
+          title="Move down"
+          disabled={index === count - 1}
+          onClick={() => props.onMove(1)}
+        />
+        <Button
+          size="sm"
+          variant="ghost"
+          icon="trash"
+          aria-label="Remove step"
+          title={count === 1 ? 'A routine needs at least one step' : 'Remove step'}
+          disabled={count === 1}
+          onClick={props.onRemove}
+        />
       </div>
 
-      <div className="stack">
-        <div className="step-head">
-          <span className="step-number">{index + 1}</span>
-          <input
-            type="text"
-            aria-label="Step title"
-            value={step.action}
-            maxLength={80}
-            onChange={(e) => props.onChange({ action: e.target.value })}
-          />
-          <Button
-            size="sm"
-            variant="ghost"
-            icon="up"
-            aria-label="Move up"
-            disabled={index === 0}
-            onClick={() => props.onMove(-1)}
-          />
-          <Button
-            size="sm"
-            variant="ghost"
-            icon="down"
-            aria-label="Move down"
-            disabled={index === count - 1}
-            onClick={() => props.onMove(1)}
-          />
-          <Button
-            size="sm"
-            variant="ghost"
-            icon="trash"
-            aria-label="Remove step"
-            disabled={count === 1}
-            onClick={props.onRemove}
-          />
-        </div>
+      <div className="step-tabs" role="tablist" aria-label="Step details">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={tab === t.id ? 'is-active' : ''}
+            onClick={() => props.onTab(t.id)}
+          >
+            <Icon name={t.icon} size={15} />
+            {t.label}
+            {needs[t.id] && <span className="tab-dot" aria-label="needs attention" />}
+          </button>
+        ))}
+      </div>
 
-        <div className="step-fields">
-          <Field label="Full guidance (level 3)" hint="Spoken when the child needs the most help.">
-            <textarea
-              rows={2}
-              maxLength={240}
-              value={step.prompts.full}
-              onChange={(e) =>
-                props.onChange({ prompts: { ...step.prompts, full: e.target.value } })
-              }
-            />
-          </Field>
-          <Field label="If stuck" hint="A simpler explanation with a clue.">
-            <textarea
-              rows={2}
-              maxLength={240}
-              value={step.ifStuck}
-              onChange={(e) => props.onChange({ ifStuck: e.target.value })}
-            />
-          </Field>
-          <Field label="Short reminder (level 2)">
-            <input
-              type="text"
-              maxLength={80}
-              value={step.prompts.short}
-              onChange={(e) =>
-                props.onChange({ prompts: { ...step.prompts, short: e.target.value } })
-              }
-            />
-          </Field>
-          {FEATURES.objectFinder && (
-            <Field label="Object to find" hint="Used by the object finder. Optional.">
-              <input
-                type="text"
-                maxLength={40}
-                value={step.object ?? ''}
-                onChange={(e) => props.onChange({ object: e.target.value || null })}
+      <div className="step-tab-body" role="tabpanel">
+        {tab === 'say' && (
+          <>
+            <Field
+              label="Full guidance"
+              hint="Spoken and shown when your child needs the most help (level 3)."
+            >
+              <textarea
+                rows={3}
+                maxLength={240}
+                value={step.prompts.full}
+                onChange={(e) =>
+                  props.onChange({ prompts: { ...step.prompts, full: e.target.value } })
+                }
               />
             </Field>
-          )}
-          <Field
-            label="How the step is confirmed"
-            hint={cameraAllowed ? undefined : 'Private room: camera checks are not allowed.'}
-          >
-            <select
-              value={step.check}
-              onChange={(e) => {
-                const check = e.target.value === 'vision' ? 'vision' : 'tap';
-                props.onChange({ check, expect: check === 'vision' ? (step.expect ?? '') : null });
-              }}
+            <Field
+              label="Short reminder"
+              hint="Used once your child has done this step alone a few times (level 2)."
             >
-              <option value="tap">Child taps Done</option>
-              <option value="vision" disabled={!cameraAllowed}>
-                Camera sees it (child can still tap)
-              </option>
-            </select>
-          </Field>
-          <Field label="Time before a gentle reminder">
-            <SecondsInput
-              value={step.timeoutSec}
-              onChange={(timeoutSec) => props.onChange({ timeoutSec })}
-            />
-          </Field>
-          {step.check === 'vision' && (
-            <div className="wide">
+              <input
+                type="text"
+                maxLength={80}
+                value={step.prompts.short}
+                onChange={(e) =>
+                  props.onChange({ prompts: { ...step.prompts, short: e.target.value } })
+                }
+              />
+            </Field>
+          </>
+        )}
+
+        {tab === 'stuck' && (
+          <>
+            <Field
+              label="If stuck"
+              hint="A simpler explanation with a clue: where to look or what it looks like."
+            >
+              <textarea
+                rows={3}
+                maxLength={240}
+                value={step.ifStuck}
+                onChange={(e) => props.onChange({ ifStuck: e.target.value })}
+              />
+            </Field>
+            <Field label="Time before a gentle reminder">
+              <SecondsInput
+                value={step.timeoutSec}
+                onChange={(timeoutSec) => props.onChange({ timeoutSec })}
+              />
+            </Field>
+          </>
+        )}
+
+        {tab === 'check' && (
+          <>
+            <Field
+              label="How the step is confirmed"
+              hint={cameraAllowed ? undefined : 'Private room: camera checks are not allowed.'}
+            >
+              <select
+                value={step.check}
+                onChange={(e) => {
+                  const check = e.target.value === 'vision' ? 'vision' : 'tap';
+                  props.onChange({
+                    check,
+                    expect: check === 'vision' ? (step.expect ?? '') : null,
+                  });
+                }}
+              >
+                <option value="tap">Child taps Done</option>
+                <option value="vision" disabled={!cameraAllowed}>
+                  Camera sees it (child can still tap)
+                </option>
+              </select>
+            </Field>
+            {step.check === 'vision' && (
               <Field label="What the camera sees when it is done">
                 <input
                   type="text"
@@ -176,25 +187,110 @@ export function StepEditor(props: StepEditorProps) {
                   placeholder="a pencil case inside the school bag"
                 />
               </Field>
+            )}
+            {FEATURES.objectFinder && (
+              <Field label="Object to find" hint="Used by the object finder. Optional.">
+                <input
+                  type="text"
+                  maxLength={40}
+                  value={step.object ?? ''}
+                  onChange={(e) => props.onChange({ object: e.target.value || null })}
+                />
+              </Field>
+            )}
+          </>
+        )}
+
+        {tab === 'picture' && (
+          <div className="step-picture-tab">
+            <div className="step-card-image">
+              {step.card ? <img src={step.card} alt={step.action} /> : <span>No picture yet</span>}
             </div>
-          )}
-          <div className="wide">
-            <Field label="Safety notes" hint="One per line, shown to the child. Optional.">
-              <textarea
-                rows={2}
-                value={step.safety.join('\n')}
-                onChange={(e) =>
-                  props.onChange({
-                    safety: e.target.value
-                      .split('\n')
-                      .map((s) => s.slice(0, 160))
-                      .slice(0, 5),
-                  })
-                }
-              />
-            </Field>
+            <div className="stack" style={{ gap: 8 }}>
+              <Button
+                size="sm"
+                icon="sparkle"
+                busy={cardBusy}
+                disabled={!saved}
+                title={cardHint ?? 'Draw a picture card with Muse Image'}
+                onClick={props.onMakeCard}
+              >
+                {step.card ? 'New picture' : 'Make picture'}
+              </Button>
+              {FEATURES.objectFinder && props.hasDemoFrame && step.object && (
+                <Button
+                  size="sm"
+                  icon="image"
+                  disabled={!saved || cardBusy}
+                  title="Cut the real object out of your video with SAM 3.1"
+                  onClick={props.onCardFromDemo}
+                >
+                  Photo from video
+                </Button>
+              )}
+              <label
+                className={`btn btn-secondary btn-sm ${!saved || cardBusy ? 'is-disabled' : ''}`}
+              >
+                Upload photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="visually-hidden"
+                  disabled={!saved || cardBusy}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (file) props.onUploadCard(file);
+                  }}
+                />
+              </label>
+              <span className="field-hint">
+                {cardHint ?? 'A clear picture of the step helps your child most.'}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
+
+        {tab === 'safety' && (
+          <Field label="Safety notes" hint="One per line, shown to your child. Optional.">
+            <textarea
+              rows={4}
+              value={step.safety.join('\n')}
+              placeholder="The water can be hot. Use the blue tap."
+              onChange={(e) =>
+                props.onChange({
+                  safety: e.target.value
+                    .split('\n')
+                    .map((s) => s.slice(0, 160))
+                    .slice(0, 5),
+                })
+              }
+            />
+          </Field>
+        )}
+      </div>
+
+      <div className="step-nav">
+        <Button
+          size="sm"
+          variant="ghost"
+          icon="back"
+          disabled={index === 0}
+          onClick={() => props.onSelectIndex(index - 1)}
+        >
+          Previous
+        </Button>
+        <span className="muted small">
+          Step {index + 1} of {count}
+        </span>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={index === count - 1}
+          onClick={() => props.onSelectIndex(index + 1)}
+        >
+          Next step →
+        </Button>
       </div>
     </section>
   );
