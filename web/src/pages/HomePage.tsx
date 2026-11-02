@@ -64,10 +64,6 @@ export function HomePage() {
           </Link>
         ))}
       </div>
-      <p className="muted small" style={{ marginTop: 28 }}>
-        Tip: open the child app on a phone on the same Wi-Fi, using this computer&apos;s address
-        shown in the hub log.
-      </p>
     </main>
   );
 }
