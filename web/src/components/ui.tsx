@@ -136,3 +136,28 @@ export function ConnectionBadge({ connected }: { connected: boolean }) {
     </span>
   );
 }
+
+/** A number with a label, for the summary row at the top of a page. */
+export function Stat({
+  icon,
+  value,
+  label,
+  tone = 'primary',
+}: {
+  icon: IconName;
+  value: number | string;
+  label: string;
+  tone?: 'primary' | 'success' | 'warn' | 'purple';
+}) {
+  return (
+    <div className={`stat stat-${tone}`}>
+      <span className="stat-icon">
+        <Icon name={icon} size={20} />
+      </span>
+      <span>
+        <b>{value}</b>
+        <span className="stat-label">{label}</span>
+      </span>
+    </div>
+  );
+}
