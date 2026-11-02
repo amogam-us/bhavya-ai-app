@@ -23,6 +23,8 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: true,
+      // The simulator's 3D engine is one large chunk that only loads on that page.
+      chunkSizeWarningLimit: 700,
     },
   };
 });

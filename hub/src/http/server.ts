@@ -65,11 +65,9 @@ export async function registerRoutes(app: FastifyInstance, ctx: AppContext): Pro
   const webIndex = path.join(ctx.config.webDistDir, 'index.html');
   const serveWeb = existsSync(webIndex);
   if (serveWeb) {
-    await app.register(fastifyStatic, {
-      root: ctx.config.webDistDir,
-      prefix: '/',
-      wildcard: false,
-    });
+    // Files are looked up on each request (wildcard), so a rebuilt web app with new
+    // hashed file names is served without restarting the hub.
+    await app.register(fastifyStatic, { root: ctx.config.webDistDir, prefix: '/' });
   }
 
   missionRoutes(app, ctx);
@@ -78,11 +76,25 @@ export async function registerRoutes(app: FastifyInstance, ctx: AppContext): Pro
   websocketRoutes(app, ctx);
 
   app.setNotFoundHandler((req, reply) => {
-    const isPage =
-      req.method === 'GET' && !req.url.startsWith('/api/') && !req.url.startsWith(CARDS_URL_PREFIX);
-    if (serveWeb && isPage) return reply.sendFile('index.html');
+    if (serveWeb && isAppPage(req)) return reply.sendFile('index.html');
     return reply.status(404).send({ error: 'Not found.' });
   });
+}
+
+/**
+ * True for browser navigations to app pages such as /parent/progress, which all render
+ * index.html. Missing files (anything with an extension) get a real 404 instead, so a
+ * stale script URL never receives HTML.
+ */
+function isAppPage(req: FastifyRequest): boolean {
+  const pathname = req.url.split('?')[0] ?? '';
+  const lastSegment = pathname.slice(pathname.lastIndexOf('/') + 1);
+  return (
+    req.method === 'GET' &&
+    !pathname.startsWith('/api/') &&
+    !pathname.startsWith(CARDS_URL_PREFIX) &&
+    !lastSegment.includes('.')
+  );
 }
 
 function handleError(error: FastifyError, req: FastifyRequest, reply: FastifyReply) {

@@ -24,6 +24,7 @@ const ALLOWED_ROLE: Record<CommandMessage['type'], ClientRole> = {
   break: 'child',
   set_assistant: 'child',
   board_say: 'child',
+  suggestion_answer: 'child',
   zone_enter: 'simulator',
   zone_leave: 'simulator',
   set_light: 'simulator',
@@ -138,6 +139,8 @@ export function websocketRoutes(app: FastifyInstance, ctx: AppContext): void {
         return engine.setAssistant(message.enabled);
       case 'board_say':
         return engine.boardSay(message.phraseId);
+      case 'suggestion_answer':
+        return engine.answerSuggestion(message.suggestionId, message.accept);
       case 'zone_enter':
         return engine.enterZone(message.zone);
       case 'zone_leave':

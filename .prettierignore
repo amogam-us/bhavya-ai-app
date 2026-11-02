@@ -1,5 +1,7 @@
 node_modules
 dist
 data
+# Kotlin app: formatted by its own tooling, and Gradle writes reports into build/.
+android
 package-lock.json
 *.md

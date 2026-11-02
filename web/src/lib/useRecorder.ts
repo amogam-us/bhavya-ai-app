@@ -6,7 +6,7 @@ const MAX_RECORDING_MS = 3 * 60_000;
 export type RecorderStatus = 'idle' | 'recording' | 'processing';
 
 /** Records from the microphone and returns the clip as a WAV data URL. */
-export function useRecorder() {
+export function useRecorder(maxMs = MAX_RECORDING_MS) {
   const [status, setStatus] = useState<RecorderStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -63,9 +63,9 @@ export function useRecorder() {
 
     recorder.start();
     setStatus('recording');
-    limitTimer.current = setTimeout(() => recorder.stop(), MAX_RECORDING_MS);
+    limitTimer.current = setTimeout(() => recorder.stop(), maxMs);
     return result;
-  }, []);
+  }, [maxMs]);
 
   const stop = useCallback(() => {
     const recorder = recorderRef.current;

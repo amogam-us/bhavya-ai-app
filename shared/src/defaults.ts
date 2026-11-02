@@ -16,4 +16,5 @@ export const DEFAULT_PROFILE: ChildProfile = {
   startLevel: 3,
   showText: true,
   calming: { breathing: true, music: true },
+  glassesSuggestions: false,
 };

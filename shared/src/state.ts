@@ -29,12 +29,38 @@ export interface RunView {
   cue: PromptCue;
 }
 
+/** Why Bhavya is offering a routine. */
+export type SuggestionReason = 'camera' | 'voice' | 'resume';
+
+/** A routine Bhavya offers; it only starts when the child answers yes. */
+export interface SuggestionView {
+  id: string;
+  missionId: string;
+  missionTitle: string;
+  reason: SuggestionReason;
+  /** The question shown and spoken to the child. */
+  prompt: string;
+}
+
+/** A routine set aside so another one could run, waiting to be continued. */
+export interface PausedRunView {
+  runId: string;
+  missionId: string;
+  missionTitle: string;
+  stepIndex: number;
+  totalSteps: number;
+}
+
 export interface HomeState {
   zone: string | null;
   camera: CameraPolicy;
   assistantEnabled: boolean;
   lights: Record<string, boolean>;
   run: RunView | null;
+  paused: PausedRunView | null;
+  suggestion: SuggestionView | null;
+  /** True while the glasses camera may look around to suggest a routine. */
+  scanning: boolean;
   lastCompleted: { missionTitle: string; at: string } | null;
 }
 
