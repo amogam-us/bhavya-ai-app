@@ -110,3 +110,51 @@ export const groundingSchema = z.object({
   x_max: z.number(),
   y_max: z.number(),
 });
+
+export const VOICE_INTENT_ACTIONS = [
+  'start_routine',
+  'continue',
+  'help',
+  'stop',
+  'break',
+  'done',
+  'none',
+] as const;
+
+export const voiceIntentJsonSchema: JsonSchema = {
+  type: 'object',
+  properties: {
+    action: { type: 'string', enum: [...VOICE_INTENT_ACTIONS] },
+    routineId: { type: 'string' },
+    confidence: { type: 'number' },
+  },
+  required: ['action', 'routineId', 'confidence'],
+  additionalProperties: false,
+};
+
+export const voiceIntentSchema = z.object({
+  action: z.enum(VOICE_INTENT_ACTIONS),
+  routineId: z.string(),
+  confidence: z.number(),
+});
+export type VoiceIntentAnswer = z.infer<typeof voiceIntentSchema>;
+
+export const sceneCheckJsonSchema: JsonSchema = {
+  type: 'object',
+  properties: {
+    seen: { type: 'string' },
+    private: { type: 'boolean' },
+    routineId: { type: 'string' },
+    confidence: { type: 'number' },
+  },
+  required: ['seen', 'private', 'routineId', 'confidence'],
+  additionalProperties: false,
+};
+
+export const sceneCheckSchema = z.object({
+  seen: z.string(),
+  private: z.boolean(),
+  routineId: z.string(),
+  confidence: z.number(),
+});
+export type SceneCheckAnswer = z.infer<typeof sceneCheckSchema>;

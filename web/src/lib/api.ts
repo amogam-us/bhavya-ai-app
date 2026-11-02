@@ -1,4 +1,5 @@
 import type {
+  AppOptions,
   BOARD_PHRASES,
   ChildProfile,
   DraftFromDemoRequest,
@@ -10,7 +11,9 @@ import type {
   MissionInput,
   Notification,
   ProgressResponse,
+  SceneScanResponse,
   TranscribeResponse,
+  VoiceRequestResponse,
   Zone,
 } from '@bhavya/shared';
 
@@ -83,6 +86,7 @@ export const api = {
   uploadCard: (id: string, stepId: string, image: string) =>
     request<Mission>('PUT', stepCardPath(id, stepId), { image }),
 
+  options: () => request<AppOptions>('GET', '/api/options'),
   settings: () => request<Settings>('GET', '/api/settings'),
   saveProfile: (profile: ChildProfile) =>
     request<ChildProfile>('PUT', '/api/settings/profile', profile),
@@ -105,6 +109,9 @@ export const api = {
     request<FindObjectResponse>('POST', '/api/vision/find', { object, image }),
   transcribe: (audio: string) =>
     request<TranscribeResponse>('POST', '/api/voice/transcribe', { audio }),
+  voiceRequest: (audio: string) =>
+    request<VoiceRequestResponse>('POST', '/api/voice/request', { audio }),
+  scan: (image: string) => request<SceneScanResponse>('POST', '/api/scan', { image }),
 };
 
 export function errorMessage(error: unknown): string {

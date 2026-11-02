@@ -63,6 +63,64 @@ export interface TranscribeResponse {
   transcript: string;
 }
 
+/** The child spoke to Bhavya with the Talk button. Same audio format as transcribeSchema. */
+export const voiceRequestSchema = transcribeSchema;
+
+/** What Bhavya understood and did with a spoken request. */
+export type VoiceAction =
+  'start_routine' | 'suggest_routine' | 'continue' | 'help' | 'stop' | 'break' | 'done' | 'none';
+
+export interface VoiceRequestResponse {
+  /** What Muse heard, or "" when nothing was heard. */
+  transcript: string;
+  action: VoiceAction;
+  /** Short reply the child app speaks and shows. */
+  message: string;
+}
+
+/** One idle glasses frame, sent so Bhavya can suggest a routine. */
+export const sceneScanSchema = z.object({ image: imageDataUrlSchema });
+
+/** private: camera paused; quiet: nothing fits; waiting: needs a second matching look. */
+export type ScanOutcome = 'private' | 'quiet' | 'waiting' | 'suggested' | 'ignored';
+
+/** What Muse saw in a glasses frame, for the camera debug view. */
+export interface ScanDetail {
+  /** A few words about the place and the main objects. */
+  seen: string;
+  private: boolean;
+  /** Title of the routine that fits, or null. */
+  routine: string | null;
+  confidence: number;
+}
+
+export interface SceneScanResponse {
+  outcome: ScanOutcome;
+  /** Present when Muse looked at the frame. */
+  detail?: ScanDetail;
+}
+
+/**
+ * Which home simulator views to offer (hub .env SIMULATOR_VIEW): 3D with a
+ * button for the simple view, 3D only, or the simple view only.
+ */
+export type SimulatorView = 'both' | '3d' | 'simple';
+
+/** Hub options from its .env that the web app needs. */
+export interface AppOptions {
+  simulator: {
+    /** False hides the simulator's link on the home page; the page itself still works. */
+    visible: boolean;
+    view: SimulatorView;
+  };
+  /** False when finding routines with the glasses camera is turned off for this hub. */
+  glassesSuggestions: boolean;
+  /** Minutes the glasses stop looking around after seeing a private place. */
+  privatePauseMinutes: number;
+  /** Shows on the child's screen what Muse saw in each camera frame, for testing. */
+  cameraDebug: boolean;
+}
+
 export const uploadCardSchema = z.object({ image: imageDataUrlSchema });
 
 export interface DraftResponse {

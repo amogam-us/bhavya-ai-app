@@ -1,14 +1,19 @@
 /* ------------------------------------------------------------ tokens */
 :root {
-  --bg: #f4f6f8;
+  /* Colours from the Bhavya logo: blue is the primary colour. */
+  --bg: #f3f7fc;
   --surface: #ffffff;
-  --surface-2: #f8fafb;
-  --text: #1c2530;
-  --muted: #5d6b7a;
-  --border: #dfe5ea;
-  --primary: #2f6f73;
-  --primary-strong: #245659;
-  --primary-weak: #e3f1f1;
+  --surface-2: #f7fafe;
+  --text: #14243d;
+  --muted: #5a6b82;
+  --border: #dbe4ef;
+  --primary: #1565b5;
+  --primary-strong: #0c4f93;
+  --primary-weak: #e6f0fb;
+  --brand-teal: #23a99f;
+  --brand-amber: #f5a800;
+  --brand-coral: #ec6f7f;
+  --brand-purple: #7b5ea7;
   --success: #2b7a3d;
   --success-weak: #e5f4e8;
   --warn: #9a5b00;
@@ -20,7 +25,7 @@
   --radius: 14px;
   --radius-sm: 10px;
   --shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 2px 8px rgb(16 24 40 / 5%);
-  --focus: 0 0 0 3px rgb(47 111 115 / 35%);
+  --focus: 0 0 0 3px rgb(21 101 181 / 32%);
   color-scheme: light;
   font-family:
     system-ui,
@@ -428,7 +433,13 @@ th {
 .landing {
   max-width: 980px;
   margin: 0 auto;
-  padding: 48px 20px;
+  padding: 40px 20px 48px;
+}
+body:has(.landing) {
+  background:
+    radial-gradient(60rem 30rem at 85% -10%, rgb(123 94 167 / 12%), transparent 60%),
+    radial-gradient(50rem 28rem at -10% 10%, rgb(21 101 181 / 12%), transparent 60%),
+    radial-gradient(40rem 24rem at 60% 110%, rgb(35 169 159 / 10%), transparent 60%), var(--bg);
 }
 .brand {
   display: flex;
@@ -440,8 +451,15 @@ th {
   text-decoration: none;
 }
 .brand img {
-  width: 34px;
-  height: 34px;
+  display: block;
+  height: 38px;
+  width: auto;
+}
+.landing-logo {
+  display: block;
+  width: min(100%, 540px);
+  height: auto;
+  margin-left: -10px;
 }
 .landing h1 {
   font-size: 2.1rem;
@@ -485,6 +503,15 @@ th {
   place-items: center;
   background: var(--primary-weak);
   color: var(--primary);
+}
+/* Each tile picks up one of the logo's colours. */
+.tile:nth-child(2) .tile-icon {
+  background: #e3f6f4;
+  color: var(--brand-teal);
+}
+.tile:nth-child(3) .tile-icon {
+  background: #fff3d9;
+  color: #b97a00;
 }
 
 /* ------------------------------------------------------ parent layout */
@@ -534,56 +561,6 @@ th {
 .parent-content {
   max-width: 1060px;
   margin: 0 auto;
-}
-
-.alerts-panel {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 0;
-}
-.alerts-panel h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.alerts-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 38vh;
-  overflow-y: auto;
-}
-.alert-item {
-  font-size: 0.83rem;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: var(--surface-2);
-  border-left: 3px solid #b8c3cc;
-}
-.alert-item time {
-  display: block;
-  color: var(--muted);
-  font-size: 0.75rem;
-}
-.alert-help,
-.alert-stuck {
-  border-left-color: var(--warn);
-  background: var(--warn-weak);
-}
-.alert-completed {
-  border-left-color: var(--success);
-}
-.alert-board {
-  border-left-color: var(--info);
 }
 
 .toast-stack {
@@ -815,8 +792,8 @@ th {
 
 /* ------------------------------------------------------------ child app */
 .child {
-  --child-bg: #eef5f4;
-  --child-ink: #173436;
+  --child-bg: #eef4fb;
+  --child-ink: #13294b;
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--child-bg);
@@ -885,20 +862,20 @@ th {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #c8dad8;
+  background: #c9d8ea;
 }
 .progress-dots span.done {
-  background: #4f9a94;
+  background: #5b93d1;
 }
 .progress-dots span.current {
   background: var(--primary);
-  outline: 3px solid #a7d0cb;
+  outline: 3px solid #a9c9ee;
 }
 .step-card {
   background: #fff;
   border-radius: 24px;
   padding: 22px;
-  box-shadow: 0 4px 18px rgb(23 52 54 / 10%);
+  box-shadow: 0 4px 18px rgb(19 41 75 / 10%);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -909,7 +886,7 @@ th {
   width: min(100%, 340px);
   aspect-ratio: 1;
   border-radius: 20px;
-  background: #f2f7f6;
+  background: #f1f6fc;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -946,7 +923,7 @@ th {
 }
 .child-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 .child-btn {
@@ -963,10 +940,10 @@ th {
   cursor: pointer;
   background: #fff;
   color: var(--child-ink);
-  box-shadow: 0 2px 8px rgb(23 52 54 / 10%);
+  box-shadow: 0 2px 8px rgb(19 41 75 / 10%);
 }
 .child-btn:focus-visible {
-  outline: 4px solid #8cc7c1;
+  outline: 4px solid #8fb9e8;
 }
 .child-btn:disabled {
   opacity: 0.5;
@@ -982,6 +959,118 @@ th {
   background: #fff1d6;
   color: #7a4b00;
 }
+.child-btn.talk {
+  background: #e6eefc;
+  color: #23468a;
+}
+.child-btn.talk.is-listening {
+  background: #23468a;
+  color: #fff;
+  animation: listening 1.6s ease-in-out infinite;
+}
+@keyframes listening {
+  50% {
+    box-shadow: 0 0 0 8px rgb(35 70 138 / 22%);
+  }
+}
+.talk-row {
+  display: grid;
+  gap: 10px;
+}
+.talk-reply {
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 16px;
+  font-weight: 700;
+  text-align: center;
+}
+.suggestion-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+.suggestion-actions .child-btn.done {
+  grid-column: auto;
+}
+.scan-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.scan-view {
+  position: relative;
+  width: min(100%, 380px);
+  aspect-ratio: 4 / 3;
+  max-height: 300px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #0f1d2b;
+  box-shadow: 0 4px 18px rgb(19 41 75 / 14%);
+}
+.scan-view video,
+.scan-view img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.scan-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+}
+.scan-label {
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--info-weak);
+  color: var(--info);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+.camera-elsewhere {
+  align-self: center;
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--info-weak);
+  color: var(--info);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+}
+.camera-debug {
+  width: min(100%, 380px);
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #1e2a38;
+  color: #e6f0ff;
+  font:
+    600 0.78rem/1.4 ui-monospace,
+    monospace;
+}
+.camera-debug.is-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  width: auto;
+  background: rgb(15 29 43 / 78%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .child-btn.talk.is-listening {
+    animation: none;
+  }
+}
 .camera-panel {
   position: relative;
   width: 100%;
@@ -989,7 +1078,8 @@ th {
   overflow: hidden;
   background: #0f1d1e;
 }
-.camera-panel video {
+.camera-panel video,
+.camera-panel img {
   width: 100%;
   height: 100%;
   display: block;
@@ -1037,7 +1127,7 @@ th {
   font-weight: 800;
   color: var(--child-ink);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgb(23 52 54 / 10%);
+  box-shadow: 0 2px 8px rgb(19 41 75 / 10%);
 }
 .mission-tile .step-picture {
   width: 100%;
@@ -1065,7 +1155,7 @@ th {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgb(23 52 54 / 10%);
+  box-shadow: 0 2px 6px rgb(19 41 75 / 10%);
 }
 .board-tile img,
 .board-tile .board-fallback {
@@ -1073,7 +1163,7 @@ th {
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 12px;
-  background: #e5f1ef;
+  background: #e8f1fb;
 }
 .board-fallback {
   display: grid;
@@ -1135,6 +1225,351 @@ th {
   font-weight: 700;
 }
 
+/* ------------------------------------------------------------ 3D home simulator */
+.sim3d {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sim3d-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.sim3d-top h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+.sim3d-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.sim3d-tool {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sim3d-tool:hover {
+  border-color: var(--primary);
+}
+.sim3d-tool.is-on {
+  background: var(--primary-weak);
+  border-color: var(--primary);
+  color: var(--primary-strong);
+}
+.sim3d-tool:focus-visible,
+.sim3d-room:focus-visible,
+.sim3d-light:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+.sim3d-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 14px;
+}
+.sim3d-stage {
+  position: relative;
+  min-height: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #cfe3ea;
+  box-shadow: var(--shadow);
+}
+.sim3d-view,
+.sim3d-canvas {
+  position: absolute;
+  inset: 0;
+}
+.sim3d-canvas {
+  z-index: 0;
+}
+.sim3d-canvas canvas {
+  display: block;
+  touch-action: none;
+}
+.sim3d-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.sim3d-center {
+  height: 100%;
+  min-height: 50vh;
+  display: grid;
+  place-items: center;
+}
+.sim3d-simple {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 18px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sim3d-hud {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 6px;
+  pointer-events: none;
+}
+.sim3d-chip {
+  background: rgb(255 255 255 / 92%);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgb(16 24 40 / 10%);
+}
+.sim3d-chip.is-on {
+  background: #dbe8fb;
+  color: #244b8e;
+}
+.sim3d-chip.is-off {
+  background: #e4e1f7;
+  color: #3f3685;
+}
+.sim3d-hint {
+  position: absolute;
+  z-index: 2;
+  top: 16px;
+  right: 14px;
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 70%);
+  color: var(--muted);
+  font-size: 0.78rem;
+  pointer-events: none;
+}
+.sim3d-rooms {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sim3d-room {
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 13px;
+  background: rgb(255 255 255 / 94%);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgb(16 24 40 / 12%);
+}
+.sim3d-room:hover {
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--primary);
+}
+.sim3d-room.is-here {
+  background: var(--primary);
+  color: #fff;
+}
+.sim3d-room-label {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 88%);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 1px 6px rgb(16 24 40 / 12%);
+}
+.sim3d-room-label.is-private {
+  background: rgb(239 237 252 / 92%);
+  color: #4b3fb0;
+}
+.sim3d-room-label.is-unset {
+  color: var(--muted);
+}
+.sim3d-bubble {
+  position: relative;
+  max-width: 220px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: #fff;
+  color: #13294b;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  box-shadow: 0 6px 16px rgb(16 24 40 / 20%);
+  transform: translateY(-16px);
+}
+.sim3d-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-bottom: 0;
+  border-top-color: #fff;
+}
+.sim3d-close {
+  border: 0;
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.sim3d-close:hover {
+  background: var(--bg);
+}
+.sim3d-panel {
+  position: absolute;
+  z-index: 5;
+  top: 12px;
+  right: 12px;
+  width: 240px;
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(16 24 40 / 18%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sim3d-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sim3d-light {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sim3d-light:hover {
+  border-color: var(--primary);
+}
+.sim3d-bulb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #d9dee3;
+}
+.sim3d-light.is-on .sim3d-bulb {
+  background: #ffd34d;
+  box-shadow: 0 0 12px rgb(255 200 50 / 80%);
+}
+.sim3d-error {
+  position: absolute;
+  z-index: 6;
+  top: 56px;
+  left: 12px;
+  right: 12px;
+}
+.sim3d-side {
+  width: clamp(240px, 24vw, 380px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.sim3d-side-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: center;
+}
+.sim3d-phone-box {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+.sim3d-phone {
+  position: relative;
+  flex: none;
+}
+.sim3d-phone-body {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  border-radius: 52px;
+  background: #11181f;
+  box-shadow: 0 22px 50px rgb(16 24 40 / 28%);
+}
+.sim3d-phone-body iframe {
+  display: block;
+  border: 0;
+  border-radius: 40px;
+  background: #eef4fb;
+}
+@media (max-width: 1200px) {
+  .sim3d-hint {
+    display: none;
+  }
+}
+@media (max-width: 1000px) {
+  .sim3d {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .sim3d-top .connection {
+    display: none;
+  }
+  .sim3d-body {
+    grid-template-columns: 1fr;
+  }
+  .sim3d-stage {
+    height: 62vh;
+    min-height: 420px;
+  }
+  .sim3d-side {
+    width: 100%;
+    height: 760px;
+  }
+}
+
 /* ------------------------------------------------------------ responsive */
 @media (max-width: 860px) {
   .parent-shell {
@@ -1152,9 +1587,6 @@ th {
   .nav {
     flex-direction: row;
     flex-wrap: wrap;
-  }
-  .alerts-panel {
-    display: none;
   }
   .parent-main {
     padding: 20px 16px 60px;

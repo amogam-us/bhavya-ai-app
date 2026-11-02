@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EngineError } from '../src/engine/engine';
-import { createHarness, finishRun, type Harness } from './helpers';
+import {
+  DECLINE_COOLDOWN_MS,
+  EngineError,
+  MissionEngine,
+  MAX_CAMERA_SUGGESTIONS_PER_HOUR,
+  PRIVATE_SCAN_PAUSE_MS,
+  SUGGESTION_TIMEOUT_MS,
+  type SceneResult,
+  type VoiceIntent,
+} from '../src/engine/engine';
+import { createHarness, enableGlassesSuggestions, finishRun, type Harness } from './helpers';
 
 describe('MissionEngine', () => {
   let h: Harness;
@@ -43,7 +52,8 @@ describe('MissionEngine', () => {
       h.engine.startMission(h.mission('Pack').id);
       const run = h.state().run!;
       expect(run.visionActive).toBe(true);
-      expect(run.highlightObject).toBe(true);
+      // The object finder is switched off (FEATURES.objectFinder).
+      expect(run.highlightObject).toBe(false);
       expect(h.engine.watchableStep(run.runId, run.stepIndex)).not.toBeNull();
 
       h.engine.setBreak(run.runId, true);
@@ -236,6 +246,270 @@ describe('MissionEngine', () => {
     it('rejects unknown rooms and lights', () => {
       expect(() => h.engine.enterZone('garage')).toThrow(EngineError);
       expect(() => h.engine.setLight('garage_light', true)).toThrow(EngineError);
+    });
+  });
+
+  describe('voice requests', () => {
+    const ask = (missionId: string, confidence = 0.9): VoiceIntent => ({
+      action: 'start_routine',
+      missionId,
+      confidence,
+    });
+    const say = (action: VoiceIntent['action']) =>
+      h.engine.applyVoiceRequest({ action, missionId: null, confidence: 0.9 }).action;
+
+    it('pauses the current routine for a clear request and offers it again after', () => {
+      const pack = h.mission('Pack');
+      const restroom = h.mission('Using');
+      h.engine.enterZone('living_room');
+      h.engine.startMission(pack.id);
+      const packRun = h.state().run!;
+      h.engine.stepDone(packRun.runId, 0, 'tap');
+
+      expect(h.engine.applyVoiceRequest(ask(restroom.id)).action).toBe('start_routine');
+      let state = h.state();
+      expect(state.run?.missionTitle).toBe(restroom.title);
+      expect(state.paused).toMatchObject({ runId: packRun.runId, stepIndex: 1 });
+      // A private-room routine keeps the camera off wherever the child is.
+      expect(state.camera).toBe('off');
+
+      finishRun(h);
+      state = h.state();
+      expect(state.suggestion).toMatchObject({ reason: 'resume', missionId: pack.id });
+
+      h.engine.answerSuggestion(state.suggestion!.id, true);
+      state = h.state();
+      expect(state.run).toMatchObject({ runId: packRun.runId, stepIndex: 1 });
+      expect(state.paused).toBeNull();
+      expect(state.suggestion).toBeNull();
+    });
+
+    it('asks first when Muse is unsure which routine was meant', () => {
+      const pack = h.mission('Pack');
+      expect(h.engine.applyVoiceRequest(ask(pack.id, 0.6)).action).toBe('suggest_routine');
+      const { suggestion, run } = h.state();
+      expect(run).toBeNull();
+      expect(suggestion).toMatchObject({ reason: 'voice', missionId: pack.id });
+
+      h.engine.answerSuggestion(suggestion!.id, true);
+      expect(h.state().run?.missionId).toBe(pack.id);
+    });
+
+    it('does nothing for unclear or unknown requests', () => {
+      const pack = h.mission('Pack');
+      expect(h.engine.applyVoiceRequest(ask(pack.id, 0.3)).action).toBe('none');
+      expect(h.engine.applyVoiceRequest(ask('no-such-routine')).action).toBe('none');
+      const none = h.engine.applyVoiceRequest({ action: 'none', missionId: null, confidence: 1 });
+      expect(none.action).toBe('none');
+      expect(none.message).not.toBe('');
+      expect(h.state().run).toBeNull();
+      expect(h.state().suggestion).toBeNull();
+    });
+
+    it('ends the paused routine when the child does not want to continue', () => {
+      h.engine.enterZone('living_room');
+      h.engine.startMission(h.mission('Pack').id);
+      h.engine.applyVoiceRequest(ask(h.mission('Using').id));
+      h.engine.stop(h.state().run!.runId);
+
+      const resume = h.state().suggestion!;
+      expect(resume.reason).toBe('resume');
+      h.engine.answerSuggestion(resume.id, false);
+      expect(h.state().paused).toBeNull();
+      expect(h.notifications.at(-1)?.message).toContain('chose not to continue');
+    });
+
+    it('picks a paused routine up again when the child asks for it', () => {
+      const pack = h.mission('Pack');
+      const restroom = h.mission('Using');
+      h.engine.startMission(pack.id);
+      const packRun = h.state().run!;
+      h.engine.applyVoiceRequest(ask(restroom.id));
+      h.engine.applyVoiceRequest(ask(pack.id));
+      const state = h.state();
+      expect(state.run?.runId).toBe(packRun.runId);
+      expect(state.paused?.missionId).toBe(restroom.id);
+    });
+
+    it('handles done, break, help, stop and continue', () => {
+      h.engine.startMission(h.mission('Pack').id);
+      expect(say('done')).toBe('done');
+      expect(h.state().run?.stepIndex).toBe(1);
+      expect(say('break')).toBe('break');
+      expect(h.state().run?.onBreak).toBe(true);
+      expect(say('help')).toBe('help');
+      expect(h.state().run?.helpRequested).toBe(true);
+      expect(say('stop')).toBe('stop');
+      expect(h.state().run).toBeNull();
+      expect(say('continue')).toBe('none');
+    });
+
+    it('does not finish a later step when the child spoke during an earlier one', () => {
+      h.engine.startMission(h.mission('Pack').id);
+      const run = h.state().run!;
+      const heardDuring = h.engine.stepRef();
+      h.engine.stepDone(run.runId, 0, 'tap');
+      h.engine.applyVoiceRequest({ action: 'done', missionId: null, confidence: 0.9 }, heardDuring);
+      expect(h.state().run?.stepIndex).toBe(1);
+    });
+
+    it('clears paused routines and questions when the assistant is turned off', () => {
+      h.engine.startMission(h.mission('Pack').id);
+      h.engine.applyVoiceRequest(ask(h.mission('Using').id));
+      h.engine.setAssistant(false);
+      const state = h.state();
+      expect(state.run).toBeNull();
+      expect(state.paused).toBeNull();
+      expect(state.suggestion).toBeNull();
+      expect(h.engine.applyVoiceRequest(ask(h.mission('Pack').id)).action).toBe('none');
+    });
+  });
+
+  describe('glasses suggestions', () => {
+    const sees = (missionId: string | null, confidence = 0.9): SceneResult => ({
+      private: false,
+      missionId,
+      confidence,
+    });
+    const privatePlace: SceneResult = { private: true, missionId: null, confidence: 0.9 };
+
+    it('stays off for the whole hub when the hub option turns it off', () => {
+      const engine = new MissionEngine({ repos: h.repos, glassesSuggestions: false });
+      enableGlassesSuggestions(h);
+      expect(engine.getState().scanning).toBe(false);
+      expect(engine.applyScan(sees(h.mission('Pack').id))).toBe('ignored');
+      engine.dispose();
+    });
+
+    it('uses the hub option for the pause after a private place', () => {
+      const engine = new MissionEngine({ repos: h.repos, privatePauseMs: 60_000 });
+      enableGlassesSuggestions(h);
+      engine.refresh();
+      expect(engine.applyScan(privatePlace)).toBe('private');
+      vi.advanceTimersByTime(59_000);
+      expect(engine.getState().scanning).toBe(false);
+      vi.advanceTimersByTime(1_000);
+      expect(engine.getState().scanning).toBe(true);
+      engine.dispose();
+    });
+
+    it('stays off until a parent turns it on', () => {
+      expect(h.state().scanning).toBe(false);
+      expect(h.engine.applyScan(sees(h.mission('Pack').id))).toBe('ignored');
+      enableGlassesSuggestions(h);
+      expect(h.state().scanning).toBe(true);
+    });
+
+    it('only suggests routines in camera-OK rooms', () => {
+      enableGlassesSuggestions(h);
+      expect(h.engine.sceneCandidates().map((m) => m.id)).toEqual([h.mission('Pack').id]);
+      expect(h.engine.applyScan(sees(h.mission('Using').id))).toBe('quiet');
+    });
+
+    it('suggests a routine after two matching looks and starts it on yes', () => {
+      enableGlassesSuggestions(h);
+      const pack = h.mission('Pack');
+      expect(h.engine.applyScan(sees(pack.id))).toBe('waiting');
+      expect(h.engine.applyScan(sees(pack.id))).toBe('suggested');
+      const { suggestion, scanning } = h.state();
+      expect(suggestion).toMatchObject({ reason: 'camera', missionId: pack.id });
+      expect(scanning).toBe(false);
+
+      h.engine.answerSuggestion(suggestion!.id, true);
+      expect(h.state().run?.missionId).toBe(pack.id);
+      expect(h.engine.applyScan(sees(pack.id))).toBe('ignored');
+    });
+
+    it('needs confident, consecutive looks', () => {
+      enableGlassesSuggestions(h);
+      const pack = h.mission('Pack');
+      expect(h.engine.applyScan(sees(pack.id))).toBe('waiting');
+      expect(h.engine.applyScan(sees(null))).toBe('quiet');
+      expect(h.engine.applyScan(sees(pack.id))).toBe('waiting');
+      expect(h.engine.applyScan(sees(pack.id, 0.6))).toBe('quiet');
+    });
+
+    it('waits before suggesting a declined or unanswered routine again', () => {
+      enableGlassesSuggestions(h);
+      const pack = h.mission('Pack');
+      h.engine.applyScan(sees(pack.id));
+      h.engine.applyScan(sees(pack.id));
+      h.engine.answerSuggestion(h.state().suggestion!.id, false);
+      expect(h.engine.sceneCandidates()).toEqual([]);
+
+      vi.advanceTimersByTime(DECLINE_COOLDOWN_MS);
+      h.engine.applyScan(sees(pack.id));
+      h.engine.applyScan(sees(pack.id));
+      expect(h.state().suggestion).not.toBeNull();
+      vi.advanceTimersByTime(SUGGESTION_TIMEOUT_MS);
+      expect(h.state().suggestion).toBeNull();
+      expect(h.engine.sceneCandidates()).toEqual([]);
+    });
+
+    it('limits camera suggestions per hour', () => {
+      enableGlassesSuggestions(h);
+      const pack = h.mission('Pack');
+      for (let i = 0; i < MAX_CAMERA_SUGGESTIONS_PER_HOUR; i++) {
+        h.engine.applyScan(sees(pack.id));
+        expect(h.engine.applyScan(sees(pack.id))).toBe('suggested');
+        // Saying yes and then stopping leaves no cooldown, so only the hourly limit applies.
+        h.engine.answerSuggestion(h.state().suggestion!.id, true);
+        h.engine.stop(h.state().run!.runId);
+        vi.advanceTimersByTime(60_000);
+      }
+      h.engine.applyScan(sees(pack.id));
+      expect(h.engine.applyScan(sees(pack.id))).toBe('quiet');
+    });
+
+    it('stops looking for ten minutes after seeing a private place', () => {
+      enableGlassesSuggestions(h);
+      const states: boolean[] = [];
+      h.engine.on('state', (s) => states.push(s.scanning));
+      expect(h.engine.applyScan(privatePlace)).toBe('private');
+      expect(h.state().scanning).toBe(false);
+      expect(h.engine.applyScan(sees(h.mission('Pack').id))).toBe('ignored');
+
+      vi.advanceTimersByTime(PRIVATE_SCAN_PAUSE_MS);
+      expect(h.state().scanning).toBe(true);
+      expect(states.at(-1)).toBe(true);
+    });
+
+    it('never looks in a private room or while a routine runs', () => {
+      enableGlassesSuggestions(h);
+      h.engine.enterZone('bedroom');
+      expect(h.state().scanning).toBe(false);
+      h.engine.enterZone('living_room');
+      expect(h.state().scanning).toBe(true);
+      h.engine.startMission(h.mission('Pack').id);
+      expect(h.state().scanning).toBe(false);
+    });
+  });
+
+  describe('trace lines', () => {
+    it('explains what happened without repeating itself', () => {
+      const lines: string[] = [];
+      h.engine.on('trace', (entry) => lines.push(`${entry.kind}: ${entry.message}`));
+      h.engine.enterZone('restroom');
+      expect(lines).toEqual(
+        expect.arrayContaining([
+          'sensor: Child is in the Restroom',
+          'privacy: Restroom is private → camera off',
+          'engine: Routine started: "Using the restroom"',
+          'home: Restroom light on',
+        ]),
+      );
+
+      const count = lines.length;
+      h.engine.trace('engine', 'Same line');
+      h.engine.trace('engine', 'Same line');
+      expect(lines.length).toBe(count + 1);
+    });
+
+    it('includes parent notifications', () => {
+      const lines: string[] = [];
+      h.engine.on('trace', (entry) => lines.push(`${entry.kind}: ${entry.message}`));
+      h.engine.requestHelp(null);
+      expect(lines).toContain('parent: Notification: Bhavya asked for help.');
     });
   });
 });

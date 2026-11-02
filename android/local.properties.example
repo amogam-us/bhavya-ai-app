@@ -1,0 +1,7 @@
+# Copy to local.properties (git-ignored) and adjust.
+# Path to the Android SDK. Backslashes must be escaped on Windows.
+sdk.dir=C\:\\Users\\YOU\\AppData\\Local\\Android\\Sdk
+
+# Only needed when Developer Mode is off in the Meta AI app (Wearables Developer Center values).
+# mwdat_application_id=0
+# mwdat_client_token=0

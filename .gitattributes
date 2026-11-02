@@ -1,6 +1,10 @@
 # Keep LF line endings everywhere (matches Prettier), whatever the OS.
 * text=auto eol=lf
 
+# Windows batch files need CRLF to run reliably.
+*.bat text eol=crlf
+
 *.png binary
 *.jpg binary
 *.webp binary
+*.jar binary
