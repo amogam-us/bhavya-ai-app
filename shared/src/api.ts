@@ -115,10 +115,27 @@ export interface AppOptions {
   };
   /** False when finding routines with the glasses camera is turned off for this hub. */
   glassesSuggestions: boolean;
+  /** False when Calm support is turned off for this hub. */
+  calmSupport: boolean;
   /** Minutes the glasses stop looking around after seeing a private place. */
   privatePauseMinutes: number;
   /** Shows on the child's screen what Muse saw in each camera frame, for testing. */
   cameraDebug: boolean;
+}
+
+/** A short burst of room-camera frames (about a second apart), for Calm support. */
+export const roomCheckSchema = z.object({
+  room: z.string().min(1),
+  images: z.array(imageDataUrlSchema).min(2).max(6),
+});
+
+/** calm: no signs of distress; watching: seen once, needs another look; offered: break offered. */
+export type RoomCheckOutcome = 'ignored' | 'calm' | 'watching' | 'offered';
+
+export interface RoomCheckResponse {
+  outcome: RoomCheckOutcome;
+  /** Present when Muse looked at the frames. */
+  detail?: { distress: boolean; signs: string; confidence: number };
 }
 
 export const uploadCardSchema = z.object({ image: imageDataUrlSchema });

@@ -1036,6 +1036,91 @@ body:has(.landing) {
   font-size: 0.9rem;
   font-weight: 800;
 }
+.calm-picture {
+  background: #e7f0fb;
+}
+.calm-dot {
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #9ec5f0, #5e95d6);
+  animation: breathe 10s ease-in-out infinite;
+}
+.room-device {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.room-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.room-top h1 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.room-presence {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-weight: 700;
+}
+.room-presence.is-here {
+  background: var(--success-weak);
+  color: var(--success);
+}
+.room-meter-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+.room-meter {
+  position: relative;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.room-meter span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.2s;
+}
+.room-meter span.is-loud {
+  background: var(--warn);
+}
+.room-meter i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--danger);
+}
+.room-camera-view {
+  width: min(100%, 320px);
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0f1d2b;
+  color: #c7d3e0;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+.room-camera-view video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .camera-elsewhere {
   align-self: center;
   margin: 0;

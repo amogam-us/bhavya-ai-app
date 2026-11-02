@@ -97,4 +97,29 @@ describe('MuseService', () => {
     });
     expect(scene).toEqual({ seen: 'kitchen', private: false, missionId: null, confidence: 0 });
   });
+
+  it('checks a burst of room frames for distress, in order', async () => {
+    const { muse, fetchImpl } = serviceAnswering({
+      distress: true,
+      signs: ' crying, covering ears ',
+      confidence: 1.3,
+    });
+    const result = await muse.checkDistress([
+      'data:image/jpeg;base64,AAAA',
+      'data:image/jpeg;base64,BBBB',
+    ]);
+    expect(result).toEqual({ distress: true, signs: 'crying, covering ears', confidence: 1 });
+    const prompt = sentPrompt(fetchImpl);
+    expect(prompt).toContain('Frame 2');
+    expect(prompt).toContain('NOT distress');
+  });
+
+  it('drops signs when there is no distress', async () => {
+    const { muse } = serviceAnswering({ distress: false, signs: 'rocking', confidence: 0.8 });
+    const result = await muse.checkDistress([
+      'data:image/jpeg;base64,A',
+      'data:image/jpeg;base64,B',
+    ]);
+    expect(result).toEqual({ distress: false, signs: '', confidence: 0.8 });
+  });
 });

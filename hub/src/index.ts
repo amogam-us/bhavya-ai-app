@@ -32,6 +32,7 @@ async function main(): Promise<void> {
     repos,
     glassesSuggestions: config.glassesSuggestions,
     privatePauseMs: config.privatePauseMinutes * 60_000,
+    calmSupport: config.calmSupport,
   });
   // What the hub noticed and decided, step by step. Shown with LOG_LEVEL=debug.
   engine.on('trace', (entry) => app.log.debug(`[${entry.kind}] ${entry.message}`));

@@ -11,6 +11,7 @@ import {
   type PausedRunView,
   type PromptCue,
   type PromptLevel,
+  type RoomCheckOutcome,
   type RunView,
   type ScanOutcome,
   type Step,
@@ -21,6 +22,7 @@ import {
 } from '@bhavya/shared';
 import type { Repositories } from '../db/repositories';
 import { newId } from '../lib/ids';
+import { CalmMonitor, type CalmTrigger, type DistressResult } from './calm';
 import {
   applyOutcome,
   cueForLevel,
@@ -42,6 +44,10 @@ export const DECLINE_COOLDOWN_MS = 15 * 60_000;
 /** Camera and voice suggestions disappear if not answered in this time. */
 export const SUGGESTION_TIMEOUT_MS = 60_000;
 export const MAX_CAMERA_SUGGESTIONS_PER_HOUR = 4;
+/** After a quiet break is offered, no new offer for this long. */
+export const CALM_OFFER_COOLDOWN_MS = 5 * 60_000;
+/** After the child says "Not now" to a quiet break, no new offer for this long. */
+export const CALM_DECLINE_COOLDOWN_MS = 10 * 60_000;
 /** The same trace line is not repeated within this time. */
 const TRACE_REPEAT_MS = 60_000;
 
@@ -125,6 +131,8 @@ export interface EngineOptions {
   glassesSuggestions?: boolean;
   /** How long looking around pauses after a private place (hub option). */
   privatePauseMs?: number;
+  /** False turns off Calm support for the whole hub (hub option). Default true. */
+  calmSupport?: boolean;
 }
 
 /**
@@ -140,6 +148,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   private readonly makeId: () => string;
   private readonly suggestionsAvailable: boolean;
   private readonly privatePauseMs: number;
+  private readonly calmAvailable: boolean;
 
   private zoneId: string | null = null;
   private assistantEnabled = true;
@@ -161,6 +170,11 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   private readonly declinedUntil = new Map<string, number>();
   private lastTrace: TraceEntry | null = null;
 
+  // Calm support.
+  private readonly calm: CalmMonitor;
+  /** A quiet break outside a routine. */
+  private calmBreak = false;
+
   constructor(options: EngineOptions) {
     super();
     this.repos = options.repos;
@@ -168,12 +182,15 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     this.makeId = options.newId ?? newId;
     this.suggestionsAvailable = options.glassesSuggestions ?? true;
     this.privatePauseMs = options.privatePauseMs ?? PRIVATE_SCAN_PAUSE_MS;
+    this.calmAvailable = options.calmSupport ?? true;
+    this.calm = new CalmMonitor(this.now);
   }
 
   // ---------------------------------------------------------------- queries
 
   getState(): HomeState {
     const camera = this.cameraPolicy();
+    const supportRoom = this.supportRoom();
     const lights: Record<string, boolean> = {};
     for (const zone of this.zones()) {
       if (zone.light) lights[zone.light] = this.lights.get(zone.light) ?? false;
@@ -187,6 +204,8 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
       paused: this.paused ? viewPaused(this.paused) : null,
       suggestion: this.suggestion ? viewSuggestion(this.suggestion) : null,
       scanning: this.scanAllowed(),
+      calmBreak: this.calmBreak,
+      support: { room: supportRoom, camera: supportRoom !== null && this.watchesDistress() },
       lastCompleted: this.lastCompleted,
     };
   }
@@ -209,9 +228,61 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     if (!this.suggestionsAvailable || !this.assistantEnabled || this.run || this.suggestion) {
       return false;
     }
+    if (this.calmBreak) return false;
     if (!this.profile().glassesSuggestions) return false;
     if (this.currentZone()?.type === 'private') return false;
     return this.now() >= this.privateUntil;
+  }
+
+  /**
+   * Calm support: the room whose device may listen right now. Only a camera-OK
+   * room the child is in, never a private one, and not during a break.
+   */
+  supportRoom(): string | null {
+    if (!this.calmAvailable || !this.assistantEnabled || this.calmBreak || this.run?.onBreak) {
+      return null;
+    }
+    if (!this.profile().calmSupport.enabled) return null;
+    const zone = this.currentZone();
+    return zone?.type === 'camera_ok' ? zone.id : null;
+  }
+
+  /** True when that room's camera may also look for signs of distress. */
+  distressChecksAllowed(room: string): boolean {
+    return this.supportRoom() === room && this.watchesDistress();
+  }
+
+  /** A room device's loudness for the last second (0 to 100). Nothing is recorded. */
+  applyRoomSound(room: string, level: number): void {
+    if (this.supportRoom() !== room) return;
+    const trigger = this.calm.sound(level, this.profile().calmSupport);
+    if (!trigger) return;
+    this.offerCalm(trigger);
+    this.emitState();
+  }
+
+  /** What Muse saw in a burst of room-camera frames. */
+  applyDistress(room: string, result: DistressResult): RoomCheckOutcome {
+    if (!this.distressChecksAllowed(room)) return 'ignored';
+    const outcome = this.calm.distress(result);
+    if (outcome === null) return 'calm';
+    if (outcome === 'snoozed') return 'ignored';
+    if (outcome === 'watching') {
+      this.trace('engine', 'Signs of distress seen once → look again before offering a break');
+      return 'watching';
+    }
+    this.offerCalm(outcome);
+    this.emitState();
+    return 'offered';
+  }
+
+  /** The child is ready to go on after a quiet break. */
+  endCalmBreak(): void {
+    if (!this.calmBreak) return;
+    this.calmBreak = false;
+    this.trace('child', 'Back from the quiet break');
+    this.offerResume();
+    this.emitState();
   }
 
   /** The step the camera may watch right now, or null when watching is not allowed. */
@@ -263,6 +334,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     if (this.zoneId) this.exitCurrentZone();
 
     this.zoneId = zoneId;
+    this.calm.reset();
     if (zone.light) this.cancelLightTimer(zone.light);
     this.trace('sensor', `Child is in the ${zone.name}`);
     this.trace(
@@ -309,6 +381,8 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     this.trace('child', enabled ? 'Turned the helper on' : 'Turned the helper off');
     if (!enabled) {
       this.clearSuggestion();
+      this.calmBreak = false;
+      this.calm.reset();
       if (this.run) this.endRun(this.run, 'ended', 'assistant_off');
       this.endPaused('assistant_off');
     }
@@ -402,7 +476,15 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     if (!suggestion || suggestion.id !== suggestionId) return;
     this.clearSuggestion();
     this.trace('child', `Answered "${accept ? 'Yes' : 'Not now'}" to "${suggestion.prompt}"`);
-    if (suggestion.reason === 'resume') {
+    if (suggestion.reason === 'calm') {
+      if (accept) {
+        this.startCalmBreak();
+      } else {
+        this.calm.snooze(CALM_DECLINE_COOLDOWN_MS);
+        this.trace('engine', 'No quiet break offers for 10 minutes');
+        this.offerResume();
+      }
+    } else if (suggestion.reason === 'resume') {
       if (accept) this.resumePaused();
       else this.endPaused('not_resumed');
     } else if (accept) {
@@ -443,7 +525,11 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
         this.stop(run.id);
         return { action: 'stop', message: 'Okay, we stopped.' };
       case 'break':
-        if (!run) return { action: 'none', message: 'Okay. Rest as long as you like.' };
+        if (!run) {
+          this.startCalmBreak();
+          this.emitState();
+          return { action: 'break', message: "Okay, let's take a quiet break." };
+        }
         this.setBreak(run.id, true);
         return { action: 'break', message: "Okay, let's take a break." };
       case 'done':
@@ -591,6 +677,55 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     this.notify('ended', this.endMessage(run, reason));
   }
 
+  private watchesDistress(): boolean {
+    return this.profile().calmSupport.watchDistress;
+  }
+
+  /** Asks the child about a quiet break and tells the parent why. */
+  private offerCalm(trigger: CalmTrigger): void {
+    const zone = this.currentZone();
+    const where = zone ? ` in the ${zone.name.toLowerCase()}` : '';
+    const why =
+      trigger.kind === 'loud'
+        ? `very loud for ${trigger.seconds} seconds`
+        : trigger.signs || 'signs of distress';
+    this.calm.snooze(CALM_OFFER_COOLDOWN_MS);
+    this.clearSuggestion();
+    const suggestion: Suggestion = {
+      id: this.makeId(),
+      missionId: '',
+      missionTitle: 'Quiet break',
+      reason: 'calm',
+      prompt:
+        trigger.kind === 'loud'
+          ? "It's very loud. Do you want a quiet break?"
+          : 'Do you want a quiet break?',
+      timer: null,
+    };
+    suggestion.timer = setTimeout(
+      () => this.expireSuggestion(suggestion.id),
+      SUGGESTION_TIMEOUT_MS,
+    );
+    this.suggestion = suggestion;
+    this.trace('engine', `Calm support: ${why} → offer a quiet break`);
+    this.notify(
+      'support',
+      `${this.profile().name} seems upset${where} (${why}). Bhavya offered a quiet break.`,
+    );
+  }
+
+  /** A break outside a routine; during a routine it is the routine's own break. */
+  private startCalmBreak(): void {
+    const run = this.run;
+    if (run) {
+      this.setBreak(run.id, true);
+      return;
+    }
+    this.calmBreak = true;
+    this.calm.reset();
+    this.trace('child', 'Took a quiet break');
+  }
+
   private suggest(mission: Mission, reason: SuggestionReason): void {
     this.clearSuggestion();
     const prompt =
@@ -621,8 +756,10 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
     if (!suggestion || suggestion.id !== suggestionId) return;
     this.suggestion = null;
     this.trace('engine', 'No answer in 60 seconds → counts as "not now"');
-    // No answer counts as "not now".
-    this.declinedUntil.set(suggestion.missionId, this.now() + DECLINE_COOLDOWN_MS);
+    // No answer counts as "not now" for a routine; a quiet break is simply offered again later.
+    if (suggestion.reason !== 'calm') {
+      this.declinedUntil.set(suggestion.missionId, this.now() + DECLINE_COOLDOWN_MS);
+    }
     this.offerResume();
     this.emitState();
   }
@@ -654,6 +791,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   private startRun(mission: Mission): void {
     // A new routine replaces any open question; a paused routine is offered again after it.
     this.clearSuggestion();
+    this.calmBreak = false;
     this.lastSceneMissionId = null;
     const run: ActiveRun = {
       id: this.makeId(),
@@ -774,6 +912,7 @@ export class MissionEngine extends EventEmitter<EngineEvents> {
   private exitCurrentZone(): void {
     const leftZoneId = this.zoneId;
     this.zoneId = null;
+    this.calm.reset();
     const left = leftZoneId ? this.findZone(leftZoneId) : undefined;
     if (left) this.trace('sensor', `Child left the ${left.name}`);
 
