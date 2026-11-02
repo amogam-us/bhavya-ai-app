@@ -2,12 +2,12 @@ import type { Notification } from '@bhavya/shared';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { Icon, type IconName } from '../../components/Icon';
-import { Button, ConnectionBadge } from '../../components/ui';
+import { Button } from '../../components/ui';
 import { useHome } from '../../lib/useHome';
 
-const NAV: { to: string; icon: IconName; label: string; end?: boolean }[] = [
+const NAV: { to: string; icon: IconName; label: string; end?: boolean; primary?: boolean }[] = [
+  { to: '/parent/new', icon: 'plus', label: 'New routine', primary: true },
   { to: '/parent', icon: 'list', label: 'Routines', end: true },
-  { to: '/parent/new', icon: 'plus', label: 'New routine' },
   { to: '/parent/progress', icon: 'chart', label: 'Progress' },
   { to: '/parent/settings', icon: 'settings', label: 'Child & rooms' },
 ];
@@ -39,13 +39,26 @@ export function ParentLayout() {
         </Link>
         <nav className="nav" aria-label="Parent dashboard">
           {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end}>
-              <Icon name={item.icon} size={18} />
-              {item.label}
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={item.primary ? 'nav-primary' : undefined}
+            >
+              <span className="nav-icon">
+                <Icon name={item.icon} size={18} />
+              </span>
+              <span className="nav-label">{item.label}</span>
             </NavLink>
           ))}
         </nav>
-        <ConnectionBadge connected={home.connected} />
+        <div className={`hub-status ${home.connected ? 'is-online' : 'is-offline'}`} role="status">
+          <span className="dot" aria-hidden="true" />
+          <span>
+            <b>Home hub</b>
+            <span className="hub-status-text">{home.connected ? 'Connected' : 'Connecting…'}</span>
+          </span>
+        </div>
       </aside>
 
       <main className="parent-main">
@@ -57,7 +70,9 @@ export function ParentLayout() {
       <div className="toast-stack" aria-live="assertive">
         {toasts.map((t) => (
           <div key={t.id} className="toast" role="alert">
-            <Icon name="bell" />
+            <span className="toast-icon">
+              <Icon name="bell" size={18} />
+            </span>
             <span>{t.message}</span>
             <Button
               variant="ghost"
