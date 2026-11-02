@@ -28,6 +28,7 @@ export function SettingsPage() {
           initial={settings.data.profile}
           suggestionsAvailable={options.data?.glassesSuggestions ?? false}
           privatePauseMinutes={options.data?.privatePauseMinutes ?? 10}
+          calmAvailable={options.data?.calmSupport ?? false}
         />
         <RoomsCard initial={settings.data.zones} />
         <BoardCard />
@@ -57,12 +58,15 @@ function ProfileCard({
   initial,
   suggestionsAvailable,
   privatePauseMinutes,
+  calmAvailable,
 }: {
   initial: ChildProfile;
   /** False when the hub's GLASSES_SUGGESTIONS option is off. */
   suggestionsAvailable: boolean;
   /** The hub's PRIVATE_PAUSE_MINUTES option. */
   privatePauseMinutes: number;
+  /** False when the hub's CALM_SUPPORT option is off. */
+  calmAvailable: boolean;
 }) {
   const [profile, setProfile] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -197,6 +201,77 @@ function ProfileCard({
             saved. It stays off in private rooms and pauses for {privatePauseMinutes}{' '}
             {privatePauseMinutes === 1 ? 'minute' : 'minutes'} after seeing a bathroom or a place to
             change.
+          </p>
+        </div>
+      )}
+      {calmAvailable && (
+        <div className="stack" style={{ gap: 8 }}>
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={profile.calmSupport.enabled}
+              onChange={(e) =>
+                set({ calmSupport: { ...profile.calmSupport, enabled: e.target.checked } })
+              }
+            />
+            Calm support: offer a quiet break when my child seems upset
+          </label>
+          {profile.calmSupport.enabled && (
+            <>
+              <div className="grid-2">
+                <Field label="Very loud for">
+                  <select
+                    value={profile.calmSupport.loudSeconds}
+                    onChange={(e) =>
+                      set({
+                        calmSupport: {
+                          ...profile.calmSupport,
+                          loudSeconds: Number(e.target.value),
+                        },
+                      })
+                    }
+                  >
+                    {[5, 10, 15, 20, 30].map((seconds) => (
+                      <option key={seconds} value={seconds}>
+                        {seconds} seconds
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="What counts as very loud">
+                  <select
+                    value={profile.calmSupport.loudLevel}
+                    onChange={(e) =>
+                      set({
+                        calmSupport: { ...profile.calmSupport, loudLevel: Number(e.target.value) },
+                      })
+                    }
+                  >
+                    <option value={60}>Sensitive (raised voices)</option>
+                    <option value={75}>Normal (shouting)</option>
+                    <option value={85}>Only very loud (screaming)</option>
+                  </select>
+                </Field>
+              </div>
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={profile.calmSupport.watchDistress}
+                  onChange={(e) =>
+                    set({
+                      calmSupport: { ...profile.calmSupport, watchDistress: e.target.checked },
+                    })
+                  }
+                />
+                Also let the room camera look for signs of distress (crying, covering ears)
+              </label>
+            </>
+          )}
+          <p className="field-hint">
+            Needs a room device: open /room on an old phone or laptop in a room where the camera is
+            allowed. Nothing is recorded, private rooms are never watched, and harmless movements
+            like rocking or hand-flapping are never counted. Your child can always say &quot;Not
+            now&quot;, and you get a notification.
           </p>
         </div>
       )}

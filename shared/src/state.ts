@@ -30,7 +30,8 @@ export interface RunView {
 }
 
 /** Why Bhavya is offering a routine. */
-export type SuggestionReason = 'camera' | 'voice' | 'resume';
+/** camera/voice/resume offer a routine; calm offers a quiet break. */
+export type SuggestionReason = 'camera' | 'voice' | 'resume' | 'calm';
 
 /** A routine Bhavya offers; it only starts when the child answers yes. */
 export interface SuggestionView {
@@ -51,6 +52,14 @@ export interface PausedRunView {
   totalSteps: number;
 }
 
+/** Where a room device may support the child right now (Calm support). */
+export interface SupportView {
+  /** The room whose device should listen, or null when no room is being supported. */
+  room: string | null;
+  /** True when that room's camera may also look for signs of distress. */
+  camera: boolean;
+}
+
 export interface HomeState {
   zone: string | null;
   camera: CameraPolicy;
@@ -61,10 +70,13 @@ export interface HomeState {
   suggestion: SuggestionView | null;
   /** True while the glasses camera may look around to suggest a routine. */
   scanning: boolean;
+  /** The child is on a quiet break outside a routine (Calm support or "I need a break"). */
+  calmBreak: boolean;
+  support: SupportView;
   lastCompleted: { missionTitle: string; at: string } | null;
 }
 
-export type NotificationKind = 'help' | 'stuck' | 'completed' | 'ended' | 'board';
+export type NotificationKind = 'help' | 'stuck' | 'completed' | 'ended' | 'board' | 'support';
 
 export interface Notification {
   id: string;

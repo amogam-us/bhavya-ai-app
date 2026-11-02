@@ -2,11 +2,13 @@ import {
   FEATURES,
   findObjectSchema,
   frameCheckSchema,
+  roomCheckSchema,
   sceneScanSchema,
   transcribeSchema,
   voiceRequestSchema,
   type FindObjectResponse,
   type FrameCheckResponse,
+  type RoomCheckResponse,
   type SceneScanResponse,
   type TranscribeResponse,
   type VoiceRequestResponse,
@@ -26,6 +28,8 @@ type RunParams = { Params: { runId: string } };
 const CAMERA_NOT_ALLOWED = 'The camera is not allowed for this step right now.';
 /** Glasses frames closer together than this are skipped, so Muse is not called too often. */
 const MIN_SCAN_INTERVAL_MS = 10_000;
+/** Room-camera bursts closer together than this are skipped. */
+const MIN_ROOM_CHECK_INTERVAL_MS = 10_000;
 const NOTHING_HEARD = "I didn't hear anything. Hold the button and talk.";
 
 const percent = (confidence: number) => confidence.toFixed(2);
@@ -183,6 +187,36 @@ export function runtimeRoutes(app: FastifyInstance, ctx: AppContext): void {
       };
     } finally {
       scanBusy = false;
+    }
+  });
+
+  /**
+   * Calm support: a short burst of room-camera frames. Muse is only called when
+   * a parent turned the distress check on and the child is in that camera-OK
+   * room. The frames are never stored.
+   */
+  let lastRoomCheckAt = 0;
+  let roomCheckBusy = false;
+  app.post('/api/room/check', async (req): Promise<RoomCheckResponse> => {
+    const body = parseOrThrow(roomCheckSchema, req.body);
+    const now = Date.now();
+    const tooSoon = now - lastRoomCheckAt < MIN_ROOM_CHECK_INTERVAL_MS;
+    if (!engine.distressChecksAllowed(body.room) || roomCheckBusy || tooSoon) {
+      return { outcome: 'ignored' };
+    }
+    lastRoomCheckAt = now;
+    roomCheckBusy = true;
+    try {
+      const result = await muse.checkDistress(body.images);
+      engine.trace(
+        'muse',
+        result.distress
+          ? `Muse Spark (room camera): ${result.signs || 'signs of distress'} (${percent(result.confidence)})`
+          : 'Muse Spark (room camera): no signs of distress',
+      );
+      return { outcome: engine.applyDistress(body.room, result), detail: result };
+    } finally {
+      roomCheckBusy = false;
     }
   });
 }

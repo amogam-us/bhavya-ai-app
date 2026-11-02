@@ -158,3 +158,20 @@ export const sceneCheckSchema = z.object({
   confidence: z.number(),
 });
 export type SceneCheckAnswer = z.infer<typeof sceneCheckSchema>;
+
+export const distressCheckJsonSchema: JsonSchema = {
+  type: 'object',
+  properties: {
+    distress: { type: 'boolean' },
+    signs: { type: 'string' },
+    confidence: { type: 'number' },
+  },
+  required: ['distress', 'signs', 'confidence'],
+  additionalProperties: false,
+};
+
+export const distressCheckSchema = z.object({
+  distress: z.boolean(),
+  signs: z.string(),
+  confidence: z.number(),
+});

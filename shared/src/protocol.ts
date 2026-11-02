@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { BOARD_PHRASE_IDS } from './board';
 import type { HomeState, Notification } from './state';
 
-export const clientRoleSchema = z.enum(['child', 'parent', 'simulator']);
+/** room = a room device for Calm support (an old phone or laptop in a camera-OK room). */
+export const clientRoleSchema = z.enum(['child', 'parent', 'simulator', 'room']);
 export type ClientRole = z.infer<typeof clientRoleSchema>;
 
 const runRef = { runId: z.string().min(1) };
@@ -21,6 +22,13 @@ export const clientMessageSchema = z.discriminatedUnion('type', [
     type: z.literal('suggestion_answer'),
     suggestionId: z.string().min(1),
     accept: z.boolean(),
+  }),
+  z.object({ type: z.literal('calm_end') }),
+  /** Loudness (0 to 100) heard by a room device in the last second. Nothing is recorded. */
+  z.object({
+    type: z.literal('room_sound'),
+    room: z.string().min(1),
+    level: z.number().min(0).max(100),
   }),
   z.object({ type: z.literal('zone_enter'), zone: z.string().min(1) }),
   z.object({ type: z.literal('zone_leave') }),
